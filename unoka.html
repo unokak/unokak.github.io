@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unoka Galéria</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1 id="pageTitle">Unoka Galéria</h1>
+        <div class="nav-links">
+            <a href="index.html" class="btn">⬅️ Főmenü</a>
+            <button id="addPhotoBtn" class="btn btn-success" style="display:none;">➕ Új kép hozzáadása</button>
+        </div>
+    </header>
+
+    <main>
+        <div id="yearFilterContainer" style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 2rem; justify-content: center;">
+            <!-- Szűrőgombok helye -->
+        </div>
+
+        <div id="galleryContainer">
+            <p style="text-align: center;">Képek betöltése...</p>
+        </div>
+    </main>
+
+    <div id="photoModal" class="modal">
+        <div class="modal-content">
+            <h3 id="modalTitle">Kép szerkesztése</h3>
+            <label>Kép URL (pl. Imgur vagy GitHub link):</label>
+            <input type="text" id="photoUrl">
+            <label>Év:</label>
+            <input type="number" id="photoYear" value="2026">
+            <label>Megjegyzés / Leírás:</label>
+            <textarea id="photoCaption" rows="3"></textarea>
+            <button id="savePhoto" class="btn" style="width: 100%;">Mentés</button>
+            <button id="closePhotoModal" class="btn btn-danger" style="width: 100%; margin-top: 0.5rem;">Mégse</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const kidId = urlParams.get('id') || 'abris';
+        
+        const kidNames = { 
+            'abris': 'Ábris képei (2003-tól)', 
+            'gerda': 'Gerda képei (2004-től)', 
+            'moira': 'Moira képei (2007-től)' 
+        };
+        document.getElementById('pageTitle').innerText = kidNames[kidId] || 'Unoka Galéria';
+
+        loadKidGallery(kidId);
+        checkLoginState();
+
+        if (isAdmin()) {
+            document.getElementById('addPhotoBtn').style.display = 'inline-block';
+            document.getElementById('addPhotoBtn').onclick = () => openPhotoModal();
+        }
+
+        document.getElementById('closePhotoModal').onclick = () => document.getElementById('photoModal').style.display = 'none';
+        document.getElementById('savePhoto').onclick = savePhotoData;
+    </script>
+</body>
+</html>

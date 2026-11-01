@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Felhasználók kezelése</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>⚙️ Felhasználók és Jogosultságok</h1>
+        <div class="nav-links">
+            <a href="index.html" class="btn">⬅️ Főmenü</a>
+        </div>
+    </header>
+
+    <main>
+        <h2>Új felhasználó felvétele</h2>
+        <div style="background: var(--card-bg); padding: 1.5rem; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 2rem;">
+            <label>Felhasználónév:</label>
+            <input type="text" id="newUsername">
+            <label>Jelszó:</label>
+            <input type="password" id="newPassword">
+            <label>Jogosultság:</label>
+            <select id="newRole">
+                <option value="admin">Admin (teljes jog)</option>
+                <option value="user">Felhasználó (csak olvasás)</option>
+            </select>
+            <button id="addUserBtn" class="btn btn-success" style="width: 100%; margin-top: 1rem;">Felhasználó mentése</button>
+        </div>
+
+        <h2>Létező felhasználók</h2>
+        <div id="userListContainer" style="background: var(--card-bg); padding: 1.5rem; border-radius: 10px; border: 1px solid var(--border-color);">
+            <!-- Itt listázódnak a felhasználók -->
+        </div>
+    </main>
+
+    <script src="app.js"></script>
+    <script>
+        if (!isAdmin()) {
+            alert('Nincs jogosultságod az oldal megtekintéséhez!');
+            window.location.href = 'index.html';
+        }
+        loadUserManagement();
+        document.getElementById('addUserBtn').onclick = addNewUser;
+    </script>
+</body>
+</html>

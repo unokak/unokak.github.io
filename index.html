@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unokák fejlődése képekben</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>🌟 Unokák fejlődése képekben</h1>
+        <div class="nav-links">
+            <button id="loginBtn" class="btn">Belépés / Admin</button>
+            <span id="userStatus" style="display:none; margin-left: 10px;"></span>
+            <button id="logoutBtn" class="btn btn-danger" style="display:none; margin-left: 10px;">Kilépés</button>
+        </div>
+    </header>
+
+    <main>
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <h2>Kérlek válassz unokát:</h2>
+        </div>
+        
+        <div class="menu-grid">
+            <div class="menu-card">
+                <h2>Ábris</h2>
+                <p>Képek és pillanatok 2003-tól napjainkig.</p>
+                <a href="unoka.html?id=abris" class="btn">Megtekintés</a>
+            </div>
+            <div class="menu-card">
+                <h2>Gerda</h2>
+                <p>Képek és pillanatok 2004-től napjainkig.</p>
+                <a href="unoka.html?id=gerda" class="btn">Megtekintés</a>
+            </div>
+            <div class="menu-card">
+                <h2>Moira</h2>
+                <p>Képek és pillanatok 2007-től napjainkig.</p>
+                <a href="unoka.html?id=moira" class="btn">Megtekintés</a>
+            </div>
+        </div>
+        
+        <div id="adminPanelLink" style="margin-top: 3rem; text-align: center; display: none;">
+            <a href="admin.html" class="btn btn-success" style="font-size: 1.1rem; padding: 0.8rem 2rem;">⚙️ Felhasználók és Adminisztráció</a>
+        </div>
+    </main>
+
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <h3>Bejelentkezés</h3>
+            <label>Felhasználónév:</label>
+            <input type="text" id="loginUser">
+            <label>Jelszó:</label>
+            <input type="password" id="loginPass">
+            <button id="doLogin" class="btn" style="width: 100%;">Belépés</button>
+            <button id="closeModal" class="btn btn-danger" style="width: 100%; margin-top: 0.5rem;">Mégse</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        checkLoginState();
+        document.getElementById('loginBtn').onclick = () => document.getElementById('loginModal').style.display = 'flex';
+        document.getElementById('closeModal').onclick = () => document.getElementById('loginModal').style.display = 'none';
+        document.getElementById('doLogin').onclick = handleLogin;
+        document.getElementById('logoutBtn').onclick = handleLogout;
+    </script>
+</body>
+</html>
