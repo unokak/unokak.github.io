@@ -1,3 +1,7 @@
+// Hiányzó segédfüggvény a hiba elkerülésére
+function checkLoginState() {
+    return localStorage.getItem("unokak_logged_in_user");
+}
 // --- BIZTONSÁGI ÉS BEJELENTKEZÉSI ALAPOK ---
 document.addEventListener("DOMContentLoaded", () => {
     const currentUser = localStorage.getItem("unokak_logged_in_user");
