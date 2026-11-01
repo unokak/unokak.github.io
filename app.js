@@ -1,4 +1,4 @@
-// --- BIZTONSÁGI ÉS KONFIGURÁCIÓS ALAPOK ---
+// --- BIZTONSÁGI ÉS BEJELENTKEZÉSI ALAPOK ---
 document.addEventListener("DOMContentLoaded", () => {
     const currentUser = localStorage.getItem("unokak_logged_in_user");
     const page = window.location.pathname;
@@ -10,10 +10,44 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
-    // Felhasználói név megjelenítése, ha létezik az elem
+    // Felhasználói név megjelenítése, ha be van lépve
     const userDisplay = document.getElementById("userDisplay");
     if (userDisplay && currentUser) {
         userDisplay.textContent = `Bejelentkezve: ${currentUser}`;
+    }
+
+    // Kilépés gomb kezelése
+    const logoutBtn = document.getElementById("logoutBtn") || document.querySelector("button[onclick*='logout']");
+    if (logoutBtn) {
+        logoutBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            localStorage.removeItem("unokak_logged_in_user");
+            window.location.href = "index.html";
+        });
+    }
+
+    // Bejelentkezési űrlap kezelése a főoldalon
+    const loginForm = document.getElementById("loginForm");
+    if (loginForm) {
+        loginForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const usernameInput = document.getElementById("username").value.trim();
+            const passwordInput = document.getElementById("password").value.trim();
+
+            const data = await fetchAppData();
+            if (!data || !data.users) {
+                alert("Nem sikerült elérni az adatbázist!");
+                return;
+            }
+
+            const user = data.users.find(u => u.username === usernameInput && u.password === passwordInput);
+            if (user) {
+                localStorage.setItem("unokak_logged_in_user", user.username);
+                window.location.reload();
+            } else {
+                alert("Hibás felhasználónév vagy jelszó!");
+            }
+        });
     }
 
     initApp();
@@ -22,12 +56,6 @@ document.addEventListener("DOMContentLoaded", () => {
 // JSONBin.io Konfiguráció
 const JSONBIN_BIN_ID = '6ae71ab9ac6210605a634fba';
 const JSONBIN_API_KEY = '$2a$10$4IGyh09KryVZw6kgbdEA1uG602Yi7nB0.kxu2eXGwbnk1ctGxtsAm';
-
-const kidStartYears = {
-    'abris': 2003,
-    'gerda': 2004,
-    'moira': 2007
-};
 
 // --- FŐ PROGRAM LOGIKA ---
 async function fetchAppData() {
@@ -43,23 +71,6 @@ async function fetchAppData() {
     } catch (error) {
         console.error("Adatbázis hiba:", error);
         return null;
-    }
-}
-
-async function saveAppData(data) {
-    try {
-        const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Master-Key': JSONBIN_API_KEY
-            },
-            body: JSON.stringify(data)
-        });
-        return response.ok;
-    } catch (error) {
-        console.error("Mentési hiba:", error);
-        return false;
     }
 }
 
