@@ -108,13 +108,14 @@ main {
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    height: 100%;
 }
 
 .photo-card img {
-   width: 100%;
-    height: 250px;
+    width: 100%;
+    height: 280px;
     object-fit: contain;
-    background-color: #111;
+    background-color: #1a1a1a;
 }
 
 .photo-content {
