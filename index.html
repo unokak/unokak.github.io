@@ -40,7 +40,7 @@
         <!-- 1. FŐOLDAL / ELŐKÉP -->
         <section id="homeView" class="text-center py-12">
             <div class="max-w-3xl mx-auto bg-slate-800 p-8 rounded-2xl shadow-xl border border-slate-700">
-                <h2 class="text-3xl md:text-4xl font-extrabold text-amber-400 mb-4">Üdvözöljük az Családi Fotógalériában!</h2>
+                <h2 class="text-3xl md:text-4xl font-extrabold text-amber-400 mb-4">Üdvözöljük a Családi Fotógalériában!</h2>
                 <p class="text-slate-300 text-lg mb-8">Kövesd nyomon unokáink cseperedését évről évre. A galériák megtekintéséhez és a tartalom kezeléséhez bejelentkezés szükséges.</p>
                 
                 <div id="homeGrandkidsGrid" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -169,29 +169,27 @@
     <!-- JAVASCRIPT LOGIKA A JSONBIN KEZELÉSÉHEZ -->
     <script>
         // --- KONFIGURÁCIÓ (JSONBin.io adatok) ---
-        // Hozz létre egy bin-t a jsonbin.io oldalon, és írd be ide a BIN ID-t és a Master/Access Key-t!
-        const JSONBIN_BIN_ID = "6ae71ab9ac6210605a634fba"; // Pl: 645...
-        const JSONBIN_API_KEY = "$2a$10$qWK3dCVPqDgz6rBchuQgceNsK3VnvrClG.B0mKPXNFdcuS/pcIYhC"; // Pl: $2a$10$...
+        const JSONBIN_BIN_ID = "6ae71ab9ac6210605a634fba"; // A te Bin ID-d
+        const JSONBIN_API_KEY = "$2a$10$..."; // A te Master Key-d
 
-        // Alapértelmezett adatszerkezet, ha még üres a Bin
+        // Alapértelmezett adatszerkezet védelem
         let dbData = {
             grandkids: [
-                { id: "unoka1", name: "Ábris", image: "https://images.unsplash.com/photo-1543332164-6e82f355badc?auto=format&fit=crop&w=600&q=80" },
-                { id: "unoka2", name: "Gerda", image: "https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?auto=format&fit=crop&w=600&q=80" },
-                { id: "unoka3", name: "Moira", image: "https://images.unsplash.com/photo-1502086223501-7ea6ecd79368?auto=format&fit=crop&w=600&q=80" }
+                { id: "abris", name: "Ábris", image: "https://images.unsplash.com/photo-1543332164-6e82f355badc?auto=format&fit=crop&w=600&q=80" },
+                { id: "gerda", name: "Gerda", image: "https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?auto=format&fit=crop&w=600&q=80" },
+                { id: "moira", name: "Moira", image: "https://images.unsplash.com/photo-1502086223501-7ea6ecd79368?auto=format&fit=crop&w=600&q=80" }
             ],
             users: [
-                { username: "admin", password: "secretpassword" } // Alapértelmezett admin fiók
+                { username: "admin", password: "123", role: "admin" }
             ],
             photos: []
         };
 
-        let currentUser = null; // Aktuális bejelentkezett felhasználó
+        let currentUser = null;
 
         // Adatok betöltése induláskor a JSONBin-ről
         async function loadData() {
-            if(JSONBIN_BIN_ID === "IDE_MASOLD_A_BIN_ID_D") {
-                showAlert("Kérlek állítsd be a JSONBIN_BIN_ID és JSONBIN_API_KEY értékeket a kódban!", "bg-red-600 text-white");
+            if(!JSONBIN_BIN_ID || JSONBIN_BIN_ID.includes("IDE_MASOLD")) {
                 initApp();
                 return;
             }
@@ -201,18 +199,20 @@
                 });
                 const result = await response.json();
                 if (result && result.record) {
-                    dbData = result.record;
+                    dbData = {
+                        grandkids: result.record.grandkids || dbData.grandkids,
+                        users: result.record.users || dbData.users,
+                        photos: result.record.photos || []
+                    };
                 }
             } catch (err) {
                 console.error("Hiba az adatok letöltésekor:", err);
-                showAlert("Hiba történt az adatbázis betöltésekor. Helyi adatok használata.", "bg-amber-600 text-white");
             }
             initApp();
         }
 
         // Adatok mentése a JSONBin-re
         async function saveData() {
-            if(JSONBIN_BIN_ID === "IDE_MASOLD_A_BIN_ID_D") return;
             try {
                 await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
                     method: 'PUT',
@@ -224,17 +224,15 @@
                 });
             } catch (err) {
                 console.error("Hiba a mentéskor:", err);
-                showAlert("Hiba az adatok mentésekor!", "bg-red-600 text-white");
+                throw new Error("Hiba a mentés során");
             }
         }
 
-        // Alkalmazás inicializálása
         function initApp() {
             renderNav();
             renderHome();
         }
 
-        // --- NÉZETEK KEZELÉSE ---
         function hideAllViews() {
             document.getElementById('homeView').classList.add('hidden');
             document.getElementById('galleryView').classList.add('hidden');
@@ -263,13 +261,14 @@
             renderAdminData();
         }
 
-        // --- RENDERELÉSI FÜGGVÉNYEK ---
         function renderNav() {
             const grandkidsNav = document.getElementById('grandkidsNav');
             grandkidsNav.innerHTML = '';
-            dbData.grandkids.forEach(g => {
-                grandkidsNav.innerHTML += `<button onclick="showGallery('${g.id}')" class="px-3 py-2 rounded bg-slate-700 hover:bg-slate-600 transition font-medium">${g.name}</button>`;
-            });
+            if (dbData.grandkids && Array.isArray(dbData.grandkids)) {
+                dbData.grandkids.forEach(g => {
+                    grandkidsNav.innerHTML += `<button onclick="showGallery('${g.id}')" class="px-3 py-2 rounded bg-slate-700 hover:bg-slate-600 transition font-medium">${g.name}</button>`;
+                });
+            }
             grandkidsNav.classList.remove('hidden');
 
             const authNav = document.getElementById('authNav');
@@ -290,24 +289,26 @@
         function renderHome() {
             const grid = document.getElementById('homeGrandkidsGrid');
             grid.innerHTML = '';
-            dbData.grandkids.forEach(g => {
-                grid.innerHTML += `
-                    <div onclick="showGallery('${g.id}')" class="bg-slate-900 border border-slate-700 rounded-xl overflow-hidden shadow-lg cursor-pointer hover:border-amber-400 transition transform hover:-translate-y-1">
-                        <img src="${g.image}" alt="${g.name}" class="w-full h-48 object-cover">
-                        <div class="p-4">
-                            <h3 class="text-xl font-bold text-amber-400">${g.name}</h3>
-                            <p class="text-sm text-slate-400 mt-1">Kattints a fejlődési galériáért</p>
+            if (dbData.grandkids && Array.isArray(dbData.grandkids)) {
+                dbData.grandkids.forEach(g => {
+                    grid.innerHTML += `
+                        <div onclick="showGallery('${g.id}')" class="bg-slate-900 border border-slate-700 rounded-xl overflow-hidden shadow-lg cursor-pointer hover:border-amber-400 transition transform hover:-translate-y-1">
+                            <img src="${g.image}" alt="${g.name}" class="w-full h-48 object-cover">
+                            <div class="p-4">
+                                <h3 class="text-xl font-bold text-amber-400">${g.name}</h3>
+                                <p class="text-sm text-slate-400 mt-1">Kattints a fejlődési galériáért</p>
+                            </div>
                         </div>
-                    </div>
-                `;
-            });
+                    `;
+                });
+            }
         }
 
         function renderGallery(grandkidId) {
-            const grandkid = dbData.grandkids.find(g => g.id === grandkidId);
+            const grandkid = (dbData.grandkids || []).find(g => g.id === grandkidId);
+            if(!grandkid) return;
             document.getElementById('galleryTitle').innerText = `${grandkid.name} fejlődése képekben`;
 
-            // Kigyűjtjük az adott unoka képeit és az éveket
             const gPhotos = (dbData.photos || []).filter(p => p.grandkidId === grandkidId);
             const years = [...new Set(gPhotos.map(p => p.year))].sort((a,b) => b - a);
 
@@ -334,7 +335,6 @@
             const grid = document.getElementById('galleryGrid');
             grid.innerHTML = '';
             
-            // Sorrendbe rendezés a megadott 'order' szerint
             photosArray.sort((a, b) => (a.order || 0) - (b.order || 0));
 
             if (photosArray.length === 0) {
@@ -359,16 +359,15 @@
             });
         }
 
-        // --- ADMIN FUNKCIÓK & FORMOK ---
         function renderAdminData() {
-            // Select feltöltés az unokákkal
             const select = document.getElementById('photoGrandkid');
             select.innerHTML = '';
-            dbData.grandkids.forEach(g => {
-                select.innerHTML += `<option value="${g.id}">${g.name}</option>`;
-            });
+            if (dbData.grandkids) {
+                dbData.grandkids.forEach(g => {
+                    select.innerHTML += `<option value="${g.id}">${g.name}</option>`;
+                });
+            }
 
-            // Admin kép lista a törléshez/szerkesztéshez
             const list = document.getElementById('adminPhotoList');
             list.innerHTML = '';
             const photos = dbData.photos || [];
@@ -379,7 +378,7 @@
             }
 
             photos.forEach((p, index) => {
-                const g = dbData.grandkids.find(x => x.id === p.grandkidId);
+                const g = (dbData.grandkids || []).find(x => x.id === p.grandkidId);
                 list.innerHTML += `
                     <div class="flex items-center justify-between bg-slate-900 p-3 rounded border border-slate-700 text-sm">
                         <div class="flex items-center space-x-3 overflow-hidden">
@@ -417,10 +416,14 @@
                 dbData.photos.push(photoData);
             }
 
-            await saveData();
-            resetPhotoForm();
-            renderAdminData();
-            showAlert("Kép sikeresen elmentve!", "bg-green-600 text-white");
+            try {
+                await saveData();
+                resetPhotoForm();
+                renderAdminData();
+                showAlert("Kép sikeresen elmentve!", "bg-green-600 text-white");
+            } catch(e) {
+                showAlert("Hiba történt a mentéskor!", "bg-red-600 text-white");
+            }
         }
 
         function editPhoto(index) {
@@ -461,19 +464,18 @@
                 return;
             }
 
-            dbData.users.push({ username: u, password: p });
+            dbData.users.push({ username: u, password: p, role: "admin" });
             await saveData();
             document.getElementById('userForm').reset();
-            showAlert(`Új admin felhasználó (${u}) sikeresen rögzítve!`, "bg-green-600 text-white");
+            showAlert(`Új felhasználó (${u}) sikeresen rögzítve!`, "bg-green-600 text-white");
         }
 
-        // --- AUTH / BELÉPTETÉS ---
         function openLoginModal() {
             document.getElementById('loginModal').classList.remove('hidden');
         }
 
         function closeLoginModal() {
-            document.getElementById('loginModal').classList.add('hidden');
+            document.getElementById('loginModal'].classList.add('hidden');
         }
 
         function handleLogin(event) {
@@ -508,7 +510,6 @@
             setTimeout(() => box.classList.add('hidden'), 4000);
         }
 
-        // Indítás
         loadData();
     </script>
 </body>
