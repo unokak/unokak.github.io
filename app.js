@@ -1,4 +1,25 @@
-// --- BEJELENTKEZÉSI LOGIKA ---
+// --- BEJELENTKEZÉSI ÁLLAPOT ÉS ABLAK NYITÁS ---
+function checkLoginState() {
+    return localStorage.getItem("unokak_logged_in_user");
+}
+
+// Ez nyitja meg a bejelentkezési ablakot, amikor rákattintasz a Belépés / Admin gombra
+function openLoginModal() {
+    const modal = document.getElementById("loginModal") || document.querySelector(".modal") || document.querySelector("#login-modal");
+    if (modal) {
+        modal.style.display = "block";
+        modal.classList.remove("hidden");
+    } else {
+        // Ha nemtalálja külön modalként, próbáljuk meg jeleníteni
+        const modalContainer = document.querySelector(".modal-container");
+        if (modalContainer) modalContainer.style.display = "flex";
+    }
+}
+
+// Biztos ami biztos, ha a HTML-ben openModal vagy hasonló van
+function openModal() { openLoginModal(); }
+function showLoginModal() { openLoginModal(); }
+
 async function handleLogin() {
     const modal = document.querySelector("#loginModal") || document.querySelector(".modal") || document.body;
     const inputs = modal.querySelectorAll("input");
@@ -11,20 +32,17 @@ async function handleLogin() {
         return;
     }
 
-    // 1. Helyi vészmegoldás: ha admin és 123, azonnal beléptet (független a nettől/JSONBin-től)
+    // Helyi mentőöv admin belépéshez
     if (usernameInput === "admin" && passwordInput === "123") {
         localStorage.setItem("unokak_logged_in_user", "admin");
         window.location.reload();
         return;
     }
 
-    // 2. Kísérlet a JSONBin elérésére
     try {
         const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
             method: 'GET',
-            headers: {
-                'X-Master-Key': JSONBIN_API_KEY
-            }
+            headers: { 'X-Master-Key': JSONBIN_API_KEY }
         });
 
         if (!response.ok) throw new Error("Szerver hiba");
@@ -41,7 +59,6 @@ async function handleLogin() {
         }
     } catch (error) {
         console.error("Hálózati hiba:", error);
-        // Ha hiba van a JSONBin elérésben, de az admin nevet írták be, akkor is engedjük be tesztelni
         if (usernameInput === "admin") {
             alert("Nem érhető el az adatbázis, de az admin fiókkal most helyileg beléptetlek.");
             localStorage.setItem("unokak_logged_in_user", "admin");
@@ -52,7 +69,7 @@ async function handleLogin() {
     }
 }
 
-// --- ALAPOK ÉS VÉDELEM ---
+// --- ALAPOK ÉS ESEMÉNYEK ---
 document.addEventListener("DOMContentLoaded", () => {
     const currentUser = localStorage.getItem("unokak_logged_in_user");
     const page = window.location.pathname;
@@ -66,6 +83,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const userDisplay = document.getElementById("userDisplay");
     if (userDisplay && currentUser) {
         userDisplay.textContent = `Bejelentkezve: ${currentUser}`;
+    }
+
+    // Automatikusan rákötjük a "Belépés / Admin" gombra a nyitást, ha létezik
+    const loginTriggerBtn = document.querySelector("button[onclick*='Login'], button[onclick*='open'], .login-btn");
+    if (loginTriggerBtn && !loginTriggerBtn.getAttribute("onclick")) {
+        loginTriggerBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            openLoginModal();
+        });
     }
 
     const logoutBtn = document.getElementById("logoutBtn") || document.querySelector("button[onclick*='logout']");
@@ -111,7 +137,7 @@ async function loadPhotoGallery(kidId) {
 
     const data = await fetchAppData();
     if (!data || !data.photos || !data.photos[kidId]) {
-        container.innerHTML = "<p style='color: white; text-align: center; padding: 2rem;'>Nincsenek még képek ebben az albumban, vagy offline módban vagyunk.</p>";
+        container.innerHTML = "<p style='color: white; text-align: center; padding: 2rem;'>Nincsenek még képek ebben az albumban.</p>";
         return;
     }
 
