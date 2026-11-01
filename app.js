@@ -4,8 +4,12 @@ function checkLoginState() {
 }
 
 async function handleLogin() {
-    const usernameInput = document.getElementById("username")?.value.trim();
-    const passwordInput = document.getElementById("password")?.value.trim();
+    // Megpróbáljuk többféle lehetséges ID-val vagy típussal is megtalálni a mezőket az index.html-ben
+    const userField = document.getElementById("username") || document.getElementById("user") || document.getElementById("loginUser") || document.querySelector("input[type='text']");
+    const passField = document.getElementById("password") || document.getElementById("pass") || document.getElementById("loginPassword") || document.querySelector("input[type='password']");
+
+    const usernameInput = userField?.value.trim();
+    const passwordInput = passField?.value.trim();
 
     if (!usernameInput || !passwordInput) {
         alert("Kérlek add meg a felhasználónevet és a jelszót!");
@@ -33,7 +37,6 @@ async function handleLogin() {
         alert("Nem sikerült kapcsolódni az adatbázishoz!");
     }
 }
-
 // --- FŐ INDÍTÓ ÉS VÉDELEM ---
 document.addEventListener("DOMContentLoaded", () => {
     const currentUser = localStorage.getItem("unokak_logged_in_user");
