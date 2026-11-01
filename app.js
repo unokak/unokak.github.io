@@ -1,10 +1,15 @@
-// --- KONFIGURÁCIÓ (Közvetlen értékekkel) ---
+// --- KONFIGURÁCIÓ ---
 const JSONBIN_BIN_ID = '6ae71ab9ac6210605a634fba';
 const JSONBIN_API_KEY = '$2a$10$4IGyh09KryVZw6kgbdEA1uG602Yi7nB0.kxu2eXGwbnk1ctGxtsAm';
 
-// --- BEJELENTKEZÉS ---
+// --- BEJELENTKEZÉS ÉS JOGOSULTSÁG ---
 function checkLoginState() {
     return localStorage.getItem("unokak_logged_in_user");
+}
+
+function isAdmin() {
+    const user = localStorage.getItem("unokak_logged_in_user");
+    return user === "admin" || user === "Timi";
 }
 
 function openLoginModal() {
@@ -52,7 +57,6 @@ async function handleLogin() {
         }
     } catch (error) {
         console.error("Bejelentkezési hiba:", error);
-        // Hálózati hiba esetén admin mentőöv
         if (usernameInput === "admin") {
             localStorage.setItem("unokak_logged_in_user", "admin");
             window.location.reload();
@@ -91,7 +95,7 @@ async function fetchAppData() {
         const data = await response.json();
         return data.record;
     } catch (error) {
-        console.warn("Nem sikerült a JSONBin elérése, helyi adatok használata.");
+        console.warn("JSONBin hiba, helyi adatok használata.");
         return null;
     }
 }
@@ -121,7 +125,7 @@ async function loadPhotoGallery(kidId) {
     if (data && data.photos && data.photos[targetKey]) {
         photosArray = data.photos[targetKey];
     } else if (targetKey === "abris") {
-        // Biztonsági mentőöv a GitHubon lévő valós fájlokkal
+        // Biztonsági mentőöv Ábris képeivel
         photosArray = [
             { id: 1, year: 2003, url: "https://unokak.github.io/Abris/Abris-2003-12-24.jpg", caption: "Karácsony / Születés" },
             { id: 2, year: 2003, url: "https://unokak.github.io/Abris/Abris-itthon.jpg", caption: "Otthon" }
@@ -136,8 +140,7 @@ async function loadPhotoGallery(kidId) {
 }
 
 function renderPhotos(kidId, photosArray, container) {
-    const currentUser = localStorage.getItem("unokak_logged_in_user");
-    const isAdmin = currentUser === "admin" || currentUser === "Timi";
+    const admin = isAdmin();
 
     container.innerHTML = "";
     photosArray.forEach((photo, index) => {
@@ -145,7 +148,7 @@ function renderPhotos(kidId, photosArray, container) {
         card.className = "photo-card";
         
         let adminButtons = '';
-        if (isAdmin) {
+        if (admin) {
             adminButtons = `
                 <div class="admin-controls" style="margin-top: 10px;">
                     <button onclick="editPhoto('${kidId}', ${index})" class="btn-edit">Szerk</button>
