@@ -3,11 +3,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const currentUser = localStorage.getItem("unokak_logged_in_user");
     const page = window.location.pathname;
     
-    // Megnézzük, hogy védett oldalon vagyunk-e (unoka.html vagy admin.html)
-    const isProtectedPage = page.includes("unoka.html") || page.includes("admin.html");
-
-    // Ha védett oldalon vagyunk, de NINCS bejelentkezett felhasználó, visszadobjuk a főoldalra
-    if (isProtectedPage && !currentUser) {
+    // Ha a védett unoka.html vagy admin.html oldalon vagyunk, de NINCS bejelentkezve senki, visszadob
+    if ((page.includes("unoka.html") || page.includes("admin.html")) && !currentUser) {
         window.location.href = "index.html";
     }
 });
