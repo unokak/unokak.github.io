@@ -1,6 +1,6 @@
 // --- JSONBin.io Konfiguráció ---
-const JSONBIN_BIN_ID = 'IDE_ILLESZD_A_SAJAT_BIN_ID_D-T';
-const JSONBIN_API_KEY = 'IDE_ILLESZD_A_SAJAT_API_KULCSODAT';
+const JSONBIN_BIN_ID = '6ae71ab9ac6210605a634fba';
+const JSONBIN_API_KEY = '$2a$10$4IGyhO9KryVZw6kgbdEA1uG602Yi7nB0.kxu2eXGwbnk1ctGxtsAm';
 
 const kidStartYears = {
     'abris': 2003,
