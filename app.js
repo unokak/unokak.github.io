@@ -1,31 +1,26 @@
-// --- BEJELENTKEZÉSI ÁLLAPOT ÉS ABLAK NYITÁS ---
+// --- 1. ALAPVETŐ SEGÉDFÜGGVÉNYEK (hogy az index.html ne kapjon hibaüzenetet) ---
 function checkLoginState() {
     return localStorage.getItem("unokak_logged_in_user");
 }
 
-// Ez nyitja meg a bejelentkezési ablakot, amikor rákattintasz a Belépés / Admin gombra
 function openLoginModal() {
-    const modal = document.getElementById("loginModal") || document.querySelector(".modal") || document.querySelector("#login-modal");
+    const modal = document.getElementById("loginModal");
     if (modal) {
         modal.style.display = "block";
-        modal.classList.remove("hidden");
-    } else {
-        // Ha nemtalálja külön modalként, próbáljuk meg jeleníteni
-        const modalContainer = document.querySelector(".modal-container");
-        if (modalContainer) modalContainer.style.display = "flex";
     }
 }
 
-// Biztos ami biztos, ha a HTML-ben openModal vagy hasonló van
-function openModal() { openLoginModal(); }
-function showLoginModal() { openLoginModal(); }
+function closeLoginModal() {
+    const modal = document.getElementById("loginModal");
+    if (modal) {
+        modal.style.display = "none";
+    }
+}
 
+// --- 2. BEJELENTKEZÉS KEZELÉSE ---
 async function handleLogin() {
-    const modal = document.querySelector("#loginModal") || document.querySelector(".modal") || document.body;
-    const inputs = modal.querySelectorAll("input");
-
-    const usernameInput = inputs[0]?.value.trim();
-    const passwordInput = inputs[1]?.value.trim();
+    const usernameInput = document.getElementById("username")?.value.trim();
+    const passwordInput = document.getElementById("password")?.value.trim();
 
     if (!usernameInput || !passwordInput) {
         alert("Kérlek add meg a felhasználónevet és a jelszót!");
@@ -60,7 +55,7 @@ async function handleLogin() {
     } catch (error) {
         console.error("Hálózati hiba:", error);
         if (usernameInput === "admin") {
-            alert("Nem érhető el az adatbázis, de az admin fiókkal most helyileg beléptetlek.");
+            alert("Hálózati hiba miatt az admin fiókkal most helyileg léptetlek be.");
             localStorage.setItem("unokak_logged_in_user", "admin");
             window.location.reload();
         } else {
@@ -69,7 +64,7 @@ async function handleLogin() {
     }
 }
 
-// --- ALAPOK ÉS ESEMÉNYEK ---
+// --- 3. OLDAL BETÖLTÉSE ÉS ESEMÉNYEK ---
 document.addEventListener("DOMContentLoaded", () => {
     const currentUser = localStorage.getItem("unokak_logged_in_user");
     const page = window.location.pathname;
@@ -85,15 +80,7 @@ document.addEventListener("DOMContentLoaded", () => {
         userDisplay.textContent = `Bejelentkezve: ${currentUser}`;
     }
 
-    // Automatikusan rákötjük a "Belépés / Admin" gombra a nyitást, ha létezik
-    const loginTriggerBtn = document.querySelector("button[onclick*='Login'], button[onclick*='open'], .login-btn");
-    if (loginTriggerBtn && !loginTriggerBtn.getAttribute("onclick")) {
-        loginTriggerBtn.addEventListener("click", (e) => {
-            e.preventDefault();
-            openLoginModal();
-        });
-    }
-
+    // Kilépés gomb
     const logoutBtn = document.getElementById("logoutBtn") || document.querySelector("button[onclick*='logout']");
     if (logoutBtn) {
         logoutBtn.addEventListener("click", (e) => {
