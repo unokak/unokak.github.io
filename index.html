@@ -166,18 +166,18 @@
         <p>&copy; 2026 Unokák Fejlődése Képekben | Családi Adatbázis</p>
     </footer>
 
-    <!-- JAVASCRIPT LOGIKA A JSONBIN KEZELÉSÉHEZ -->
+    <!-- JAVASCRIPT LOGIKA -->
     <script>
         // --- KONFIGURÁCIÓ (JSONBin.io adatok) ---
         const JSONBIN_BIN_ID = "6ae71ab9ac6210605a634fba"; // A te Bin ID-d
-        const JSONBIN_API_KEY = "$2a$10$qWK3dCVPqDgz6rBchuQgceNsK3VnvrClG.B0mKPXNFdcuS/pcIYhC"; // A te Master Key-d
+        const JSONBIN_API_KEY = "$2a$10$qWK3dCVpQdgz6rBchuQgceNsK3VnvrC1G.B0mKPXNFdcuS/pcIYhC"; // A te Master Key-d
 
-        // Alapértelmezett adatszerkezet (Itt cserélheted le az 'image' linkeket a valódi fotókra!)
+        // Alapértelmezett adatszerkezet (Itt állítsd be az unokák saját előkép linkjeit!)
         let dbData = {
             grandkids: [
                 { id: "abris", name: "Ábris", image: "https://raw.githubusercontent.com/unokak/unokak.github.io/main/Abris/Abris-2021.jpg" },
-                { id: "gerda", name: "Gerda", image: "IDE_IRD_BE_GERDA_KEP_LINKJET" },
-                { id: "moira", name: "Moira", image: "IDE_IRD_BE_MOIRA_KEP_LINKJET" }
+                { id: "gerda", name: "Gerda", image: "" },
+                { id: "moira", name: "Moira", image: "" }
             ],
             users: [
                 { username: "admin", password: "123", role: "admin" }
@@ -187,7 +187,7 @@
 
         let currentUser = null;
 
-        // Adatok betöltése induláskor a JSONBin-ről
+        // Adatok betöltése (Biztonságos verzió: nem írja felül a fix unoka-beállításokat)
         async function loadData() {
             if(!JSONBIN_BIN_ID || JSONBIN_BIN_ID.includes("IDE_MASOLD")) {
                 initApp();
@@ -199,11 +199,10 @@
                 });
                 const result = await response.json();
                 if (result && result.record) {
-                    dbData = {
-                        grandkids: Array.isArray(result.record.grandkids) ? result.record.grandkids : dbData.grandkids,
-                        users: Array.isArray(result.record.users) ? result.record.users : dbData.users,
-                        photos: Array.isArray(result.record.photos) ? result.record.photos : []
-                    };
+                    // Csak a felhasználókat és a galéria képeit töltjük be a felhőből,
+                    // az unokák alapadatait és képeit fixen a kód biztosítja!
+                    if (Array.isArray(result.record.users)) dbData.users = result.record.users;
+                    if (Array.isArray(result.record.photos)) dbData.photos = result.record.photos;
                 }
             } catch (err) {
                 console.error("Hiba az adatok letöltésekor:", err);
