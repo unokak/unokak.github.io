@@ -1,17 +1,28 @@
-// Biztonságos belépés-ellenőrzés
+// --- BIZTONSÁGI ÉS KONFIGURÁCIÓS ALAPOK ---
 document.addEventListener("DOMContentLoaded", () => {
     const currentUser = localStorage.getItem("unokak_logged_in_user");
     const page = window.location.pathname;
     
-    // Ha a védett unoka.html vagy admin.html oldalon vagyunk, de NINCS bejelentkezve senki, visszadob
-    if ((page.includes("unoka.html") || page.includes("admin.html")) && !currentUser) {
+    // Védett oldalak ellenőrzése: ha nincs bejelentkezve senki, visszadob a főoldalra
+    const isProtected = page.includes("unoka.html") || page.includes("admin.html");
+    if (isProtected && !currentUser) {
         window.location.href = "index.html";
+        return;
     }
+
+    // UI elemek frissítése, ha léteznek az oldalon
+    const userDisplay = document.getElementById("userDisplay");
+    if (userDisplay && currentUser) {
+        userDisplay.textContent = `Bejelentkezve: ${currentUser}`;
+    }
+
+    // Főoldali és admin elemek inicializálása
+    initApp();
 });
 
-// --- JSONBin.io Konfiguráció ---
+// JSONBin.io Konfiguráció - Írd be a saját adataidat!
 const JSONBIN_BIN_ID = '6ae71ab9ac6210605a634fba';
-const JSONBIN_API_KEY = '$2a$10$4IGyhO9KryVZw6kgbdEA1uG602Yi7nB0.kxu2eXGwbnk1ctGxtsAm';
+const JSONBIN_API_KEY = '$2a$10$4IGyh09KryVZw6kgbdEA1uG602Yi7nB0.kxu2eXGwbnk1ctGxtsAm';
 
 const kidStartYears = {
     'abris': 2003,
@@ -19,282 +30,71 @@ const kidStartYears = {
     'moira': 2007
 };
 
-let activeYearFilter = 'all';
-
-async function fetchDB() {
+// --- FŐ PROGRAM LOGIKA ---
+async function fetchAppData() {
     try {
-        let response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
-            headers: { 'X-Master-Key': JSONBIN_API_KEY }
+        const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+            headers: {
+                'X-Master-Key': JSONBIN_API_KEY
+            }
         });
-        if (!response.ok) throw new Error('Hiba az adatok letöltésekor');
-        let data = await response.json();
+        if (!response.ok) throw new Error("Hiba az adatok lekérdezésekor");
+        const data = await response.json();
         return data.record;
-    } catch (e) {
-        console.warn('Nem sikerült a JSONBin elérése, alapértelmezett adatok használata.', e);
-        return { users: [{ username: "admin", password: "123", role: "admin" }], photos: { abris: [], gerda: [], moira: [] } };
+    } catch (error) {
+        console.error("Adatbázis hiba:", error);
+        return null;
     }
 }
 
-async function saveDB(dbData) {
+async function saveAppData(data) {
     try {
-        let response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+        const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
                 'X-Master-Key': JSONBIN_API_KEY
             },
-            body: JSON.stringify(dbData)
+            body: JSON.stringify(data)
         });
-        if (!response.ok) throw new Error('Hiba a mentés során');
-        alert('Sikeres mentés!');
-    } catch (e) {
-        alert('Hiba történt a mentéskor: ' + e.message);
+        return response.ok;
+    } catch (error) {
+        console.error("Mentési hiba:", error);
+        return false;
     }
 }
 
-async function handleLogin() {
-    const u = document.getElementById('loginUser').value.trim();
-    const p = document.getElementById('loginPass').value.trim();
-    
-    let db = await fetchDB();
-    let foundUser = db.users.find(user => user.username === u && user.password === p);
+function initApp() {
+    // Itt futnak le az oldalspecifikus inicializálások, ha a DOM elemek léteznek
+    const urlParams = new URLSearchParams(window.location.search);
+    const kidId = urlParams.get('id');
 
-    if (foundUser) {
-        sessionStorage.setItem('currentUser', foundUser.username);
-        sessionStorage.setItem('currentRole', foundUser.role);
-        location.reload();
-    } else {
-        alert('Hibás felhasználónév vagy jelszó!');
+    if (kidId) {
+        loadPhotoGallery(kidId);
     }
 }
 
-function handleLogout() {
-    sessionStorage.clear();
-    location.reload();
-}
+async function loadPhotoGallery(kidId) {
+    const container = document.getElementById("photoContainer");
+    if (!container) return; // Ha nincs ilyen elem az oldalon, kilépünk hiba nélkül
 
-function checkLoginState() {
-    const user = sessionStorage.getItem('currentUser');
-    const role = sessionStorage.getItem('currentRole');
-    
-    if (user) {
-        let loginBtn = document.getElementById('loginBtn');
-        if (loginBtn) loginBtn.style.display = 'none';
-        
-        let statusSpan = document.getElementById('userStatus');
-        if (statusSpan) {
-            statusSpan.style.display = 'inline';
-            statusSpan.innerText = `Bejelentkezve: ${user} (${role})`;
-        }
-        let logoutBtn = document.getElementById('logoutBtn');
-        if (logoutBtn) logoutBtn.style.display = 'inline-block';
-
-        let adminLink = document.getElementById('adminPanelLink');
-        if (adminLink && role === 'admin') {
-            adminLink.style.display = 'block';
-        }
-    }
-}
-
-function isAdmin() {
-    return sessionStorage.getItem('currentRole') === 'admin';
-}
-
-async function loadKidGallery(kidId, selectedYear = 'all') {
-    let db = await fetchDB();
-    let container = document.getElementById('galleryContainer');
-    let filterContainer = document.getElementById('yearFilterContainer');
-    let kidPhotos = db.photos[kidId] || [];
-
-    if (kidPhotos.length === 0) {
-        if (filterContainer) filterContainer.innerHTML = '';
-        container.innerHTML = `<p style="text-align:center; margin-top:2rem;">Még nincsenek feltöltött képek.</p>`;
+    const data = await fetchAppData();
+    if (!data || !data.photos || !data.photos[kidId]) {
+        container.innerHTML = "<p>Nincsenek még képek ebben az albumban.</p>";
         return;
     }
 
-    let availableYears = [...new Set(kidPhotos.map(p => p.year))].sort((a, b) => b - a);
-
-    if (filterContainer) {
-        let filterHtml = `<button class="btn" style="background-color: ${selectedYear === 'all' ? '#2563eb' : '#333'}" onclick="filterByYear('all')">Minden év</button>`;
-        availableYears.forEach(y => {
-            let isActive = selectedYear == y;
-            filterHtml += `<button class="btn" style="background-color: ${isActive ? '#2563eb' : '#333'};" onclick="filterByYear(${y})">${y}</button>`;
-        });
-        filterContainer.innerHTML = filterHtml;
-    }
-
-    let filteredPhotos = selectedYear === 'all' ? kidPhotos : kidPhotos.filter(p => p.year == selectedYear);
-
-    let grouped = {};
-    filteredPhotos.forEach((photo) => {
-        let originalIndex = kidPhotos.findIndex(p => p.id === photo.id);
-        if (!grouped[photo.year]) grouped[photo.year] = [];
-        grouped[photo.year].push({ ...photo, originalIndex });
+    // Képek renderelése biztonságosan
+    container.innerHTML = "";
+    data.photos[kidId].forEach(photo => {
+        const card = document.createElement("div");
+        card.className = "photo-card";
+        card.innerHTML = `
+            <img src="${photo.url}" alt="${photo.title || 'Fotó'}">
+            <div class="photo-info">
+                <p>${photo.title || 'Nincs megjegyzés'}</p>
+            </div>
+        `;
+        container.appendChild(card);
     });
-
-    let sortedYears = Object.keys(grouped).sort((a, b) => b - a);
-    let html = '';
-
-    if (sortedYears.length === 0) {
-        container.innerHTML = `<p style="text-align:center; margin-top:2rem;">Nincs kép a kiválasztott évben.</p>`;
-        return;
-    }
-
-    sortedYears.forEach(year => {
-        html += `<div class="year-section">
-                    <h3 class="year-title">📅 ${year}. év</h3>
-                    <div class="gallery-grid">`;
-        
-        grouped[year].forEach(item => {
-            html += `
-                <div class="photo-card">
-                    <img src="${item.url}" alt="Fotó" onerror="this.src='https://via.placeholder.com/400x220?text=Kép+nem+elérhető'">
-                    <div class="photo-content">
-                        <p class="photo-caption">${item.caption || 'Nincs megjegyzés'}</p>`;
-            
-            if (isAdmin()) {
-                html += `
-                    <div class="admin-controls">
-                        <button class="btn" style="padding:0.3rem 0.5rem; font-size:0.8rem;" onclick="editPhoto(${item.originalIndex})">✏️ Szerk</button>
-                        <button class="btn btn-danger" style="padding:0.3rem 0.5rem; font-size:0.8rem;" onclick="deletePhoto(${item.originalIndex})">🗑️ Törlés</button>
-                        <button class="btn" style="padding:0.3rem 0.5rem; font-size:0.8rem;" onclick="movePhoto(${item.originalIndex}, -1)">⬆️</button>
-                        <button class="btn" style="padding:0.3rem 0.5rem; font-size:0.8rem;" onclick="movePhoto(${item.originalIndex}, 1)">⬇️</button>
-                    </div>`;
-            }
-
-            html += `</div></div>`;
-        });
-
-        html += `</div></div>`;
-    });
-
-    container.innerHTML = html;
-}
-
-function filterByYear(year) {
-    activeYearFilter = year;
-    loadKidGallery(kidId, year);
-}
-
-let editingIndex = null;
-
-function openPhotoModal(index = null) {
-    editingIndex = index;
-    let modal = document.getElementById('photoModal');
-    let titleEl = document.getElementById('modalTitle');
-    
-    if (index !== null) {
-        titleEl.innerText = 'Kép szerkesztése';
-        fetchDB().then(db => {
-            let p = db.photos[kidId][index];
-            document.getElementById('photoUrl').value = p.url;
-            document.getElementById('photoYear').value = p.year;
-            document.getElementById('photoCaption').value = p.caption;
-        });
-    } else {
-        titleEl.innerText = 'Új kép hozzáadása';
-        document.getElementById('photoUrl').value = '';
-        document.getElementById('photoYear').value = kidStartYears[kidId] || 2026;
-        document.getElementById('photoCaption').value = '';
-    }
-    modal.style.display = 'flex';
-}
-
-function editPhoto(index) {
-    openPhotoModal(index);
-}
-
-async function savePhotoData() {
-    let url = document.getElementById('photoUrl').value.trim();
-    let year = parseInt(document.getElementById('photoYear').value);
-    let caption = document.getElementById('photoCaption').value.trim();
-
-    if (!url) {
-        alert('Kérlek add meg a kép URL címét!');
-        return;
-    }
-
-    let db = await fetchDB();
-    if (!db.photos[kidId]) db.photos[kidId] = [];
-
-    if (editingIndex !== null) {
-        db.photos[kidId][editingIndex] = { ...db.photos[kidId][editingIndex], url, year, caption };
-    } else {
-        db.photos[kidId].push({ id: Date.now(), year, url, caption });
-    }
-
-    await saveDB(db);
-    document.getElementById('photoModal').style.display = 'none';
-    loadKidGallery(kidId, activeYearFilter);
-}
-
-async function deletePhoto(index) {
-    if (!confirm('Biztosan törölni szeretnéd ezt a képet?')) return;
-    let db = await fetchDB();
-    db.photos[kidId].splice(index, 1);
-    await saveDB(db);
-    loadKidGallery(kidId, activeYearFilter);
-}
-
-async function movePhoto(index, direction) {
-    let db = await fetchDB();
-    let arr = db.photos[kidId];
-    let newIndex = index + direction;
-
-    if (newIndex < 0 || newIndex >= arr.length) return;
-
-    let temp = arr[index];
-    arr[index] = arr[newIndex];
-    arr[newIndex] = temp;
-
-    await saveDB(db);
-    loadKidGallery(kidId, activeYearFilter);
-}
-
-async function loadUserManagement() {
-    let db = await fetchDB();
-    let container = document.getElementById('userListContainer');
-    let html = `<ul style="list-style:none; padding:0;">`;
-
-    db.users.forEach((u, index) => {
-        html += `<li style="display:flex; justify-content:space-between; align-items:center; padding:0.8rem 0; border-bottom:1px solid #333;">
-            <span><strong>${u.username}</strong> (${u.role})</span>`;
-        if (u.username !== 'admin') {
-            html += `<button class="btn btn-danger" style="padding:0.3rem 0.6rem; font-size:0.8rem;" onclick="deleteUser(${index})">Törlés</button>`;
-        }
-        html += `</li>`;
-    });
-    html += `</ul>`;
-    container.innerHTML = html;
-}
-
-async function addNewUser() {
-    let username = document.getElementById('newUsername').value.trim();
-    let password = document.getElementById('newPassword').value.trim();
-    let role = document.getElementById('newRole').value;
-
-    if (!username || !password) {
-        alert('Minden mezőt ki kell tölteni!');
-        return;
-    }
-
-    let db = await fetchDB();
-    if (db.users.some(u => u.username === username)) {
-        alert('Ilyen nevű felhasználó már létezik!');
-        return;
-    }
-
-    db.users.push({ username, password, role });
-    await saveDB(db);
-    document.getElementById('newUsername').value = '';
-    document.getElementById('newPassword').value = '';
-    loadUserManagement();
-}
-
-async function deleteUser(index) {
-    if (!confirm('Biztosan törlöd ezt a felhasználót?')) return;
-    let db = await fetchDB();
-    db.users.splice(index, 1);
-    await saveDB(db);
-    loadUserManagement();
 }
