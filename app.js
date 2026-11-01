@@ -10,17 +10,16 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
-    // UI elemek frissítése, ha léteznek az oldalon
+    // Felhasználói név megjelenítése, ha létezik az elem
     const userDisplay = document.getElementById("userDisplay");
     if (userDisplay && currentUser) {
         userDisplay.textContent = `Bejelentkezve: ${currentUser}`;
     }
 
-    // Főoldali és admin elemek inicializálása
     initApp();
 });
 
-// JSONBin.io Konfiguráció - Írd be a saját adataidat!
+// JSONBin.io Konfiguráció
 const JSONBIN_BIN_ID = '6ae71ab9ac6210605a634fba';
 const JSONBIN_API_KEY = '$2a$10$4IGyh09KryVZw6kgbdEA1uG602Yi7nB0.kxu2eXGwbnk1ctGxtsAm';
 
@@ -65,7 +64,6 @@ async function saveAppData(data) {
 }
 
 function initApp() {
-    // Itt futnak le az oldalspecifikus inicializálások, ha a DOM elemek léteznek
     const urlParams = new URLSearchParams(window.location.search);
     const kidId = urlParams.get('id');
 
@@ -76,23 +74,37 @@ function initApp() {
 
 async function loadPhotoGallery(kidId) {
     const container = document.getElementById("photoContainer");
-    if (!container) return; // Ha nincs ilyen elem az oldalon, kilépünk hiba nélkül
+    if (!container) return;
 
     const data = await fetchAppData();
     if (!data || !data.photos || !data.photos[kidId]) {
-        container.innerHTML = "<p>Nincsenek még képek ebben az albumban.</p>";
+        container.innerHTML = "<p style='color: white; text-align: center; padding: 2rem;'>Nincsenek még képek ebben az albumban.</p>";
         return;
     }
 
-    // Képek renderelése biztonságosan
+    const currentUser = localStorage.getItem("unokak_logged_in_user");
+    const isAdmin = currentUser === "admin" || currentUser === "Timi";
+
     container.innerHTML = "";
-    data.photos[kidId].forEach(photo => {
+    data.photos[kidId].forEach((photo, index) => {
         const card = document.createElement("div");
         card.className = "photo-card";
+        
+        let adminButtons = '';
+        if (isAdmin) {
+            adminButtons = `
+                <div class="admin-controls" style="margin-top: 10px;">
+                    <button onclick="editPhoto('${kidId}', ${index})" class="btn-edit">Szerk</button>
+                    <button onclick="deletePhoto('${kidId}', ${index})" class="btn-delete">Törlés</button>
+                </div>
+            `;
+        }
+
         card.innerHTML = `
             <img src="${photo.url}" alt="${photo.title || 'Fotó'}">
             <div class="photo-info">
                 <p>${photo.title || 'Nincs megjegyzés'}</p>
+                ${adminButtons}
             </div>
         `;
         container.appendChild(card);
