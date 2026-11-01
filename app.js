@@ -1,4 +1,4 @@
-// --- 1. ALAPVETŐ SEGÉDFÜGGVÉNYEK (hogy az index.html ne kapjon hibaüzenetet) ---
+// --- 1. ALAPVETŐ SEGÉDFÜGGVÉNYEK ---
 function checkLoginState() {
     return localStorage.getItem("unokak_logged_in_user");
 }
@@ -119,20 +119,31 @@ function initApp() {
 }
 
 async function loadPhotoGallery(kidId) {
-    const container = document.getElementById("photoContainer");
+    const container = document.getElementById("photoContainer") || document.querySelector(".photo-container") || document.body;
     if (!container) return;
 
-    const data = await fetchAppData();
-    if (!data || !data.photos || !data.photos[kidId]) {
-        container.innerHTML = "<p style='color: white; text-align: center; padding: 2rem;'>Nincsenek még képek ebben az albumban.</p>";
-        return;
-    }
+    container.innerHTML = "<p style='color: white; text-align: center; padding: 2rem;'>Adatok betöltése...</p>";
 
+    const data = await fetchAppData();
+    
+    if (data && data.photos && data.photos[kidId]) {
+        renderPhotos(kidId, data.photos[kidId], container);
+    } else {
+        container.innerHTML = `
+            <div style="text-align: center; color: white; padding: 2rem;">
+                <p>Még nincsenek regisztrált képek ebben az albumban a JSONBin-ben.</p>
+                <p style="color: #aaa; font-size: 0.9rem;">ID: ${kidId}</p>
+            </div>
+        `;
+    }
+}
+
+function renderPhotos(kidId, photosArray, container) {
     const currentUser = localStorage.getItem("unokak_logged_in_user");
     const isAdmin = currentUser === "admin" || currentUser === "Timi";
 
     container.innerHTML = "";
-    data.photos[kidId].forEach((photo, index) => {
+    photosArray.forEach((photo, index) => {
         const card = document.createElement("div");
         card.className = "photo-card";
         
@@ -147,9 +158,9 @@ async function loadPhotoGallery(kidId) {
         }
 
         card.innerHTML = `
-            <img src="${photo.url}" alt="${photo.title || 'Fotó'}">
-            <div class="photo-info">
-                <p>${photo.title || 'Nincs megjegyzés'}</p>
+            <img src="${photo.url}" alt="${photo.title || 'Fotó'}" style="max-width: 100%; border-radius: 8px;">
+            <div class="photo-info" style="margin-top: 8px;">
+                <p style="color: white;">${photo.title || 'Nincs megjegyzés'}</p>
                 ${adminButtons}
             </div>
         `;
