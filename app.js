@@ -4,12 +4,13 @@ function checkLoginState() {
 }
 
 async function handleLogin() {
-    // Megpróbáljuk többféle lehetséges ID-val vagy típussal is megtalálni a mezőket az index.html-ben
-    const userField = document.getElementById("username") || document.getElementById("user") || document.getElementById("loginUser") || document.querySelector("input[type='text']");
-    const passField = document.getElementById("password") || document.getElementById("pass") || document.getElementById("loginPassword") || document.querySelector("input[type='password']");
+    // Megkeressük a bejelentkezési dobozon (modal) belüli összes input mezőt
+    const modal = document.querySelector("#loginModal") || document.querySelector(".modal") || document.body;
+    const inputs = modal.querySelectorAll("input");
 
-    const usernameInput = userField?.value.trim();
-    const passwordInput = passField?.value.trim();
+    // Az első input a felhasználónév, a második a jelszó
+    const usernameInput = inputs[0]?.value.trim();
+    const passwordInput = inputs[1]?.value.trim();
 
     if (!usernameInput || !passwordInput) {
         alert("Kérlek add meg a felhasználónevet és a jelszót!");
@@ -36,8 +37,7 @@ async function handleLogin() {
         console.error("Bejelentkezési hiba:", error);
         alert("Nem sikerült kapcsolódni az adatbázishoz!");
     }
-}
-// --- FŐ INDÍTÓ ÉS VÉDELEM ---
+}// --- FŐ INDÍTÓ ÉS VÉDELEM ---
 document.addEventListener("DOMContentLoaded", () => {
     const currentUser = localStorage.getItem("unokak_logged_in_user");
     const page = window.location.pathname;
