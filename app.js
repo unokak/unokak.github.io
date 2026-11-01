@@ -1,3 +1,14 @@
+// Automatikus belépés-ellenőrzés védett oldalakon
+document.addEventListener("DOMContentLoaded", () => {
+    const currentUser = localStorage.getItem("unokak_logged_in_user");
+    const isLoginPage = window.location.pathname.includes("index.html") || window.location.pathname === "/" || window.location.pathname.endsWith("/");
+
+    // Ha a felhasználó nincs bejelentkezve, és nem a főoldalon/bejelentkezésen van, azonnal kidobjuk
+    if (!currentUser && !isLoginPage) {
+        window.location.href = "index.html";
+    }
+});
+
 // --- JSONBin.io Konfiguráció ---
 const JSONBIN_BIN_ID = '6ae71ab9ac6210605a634fba';
 const JSONBIN_API_KEY = '$2a$10$4IGyhO9KryVZw6kgbdEA1uG602Yi7nB0.kxu2eXGwbnk1ctGxtsAm';
