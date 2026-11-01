@@ -141,11 +141,11 @@ async function loadPhotoGallery(kidId) {
     if (data && data.photos && data.photos[targetKey]) {
         renderPhotos(targetKey, data.photos[targetKey], container);
     } else {
-        // Helyi mentőöv teszteléshez
+        // Helyi mentőöv a GitHubon lévő valós fájlnevekkel
         if (targetKey === "abris") {
             const samplePhotos = [
-                { id: 1793533936988, year: 2003, url: "https://unokak.github.io/Abris/Abris-szuletés.jpg", caption: "születés" },
-                { id: 1793534331609, year: 2003, url: "https://unokak.github.io/Abris/Abris-otthon.jpg", caption: "otthon" }
+                { id: 1, year: 2003, url: "https://unokak.github.io/Abris/Abris-2003-12-24.jpg", caption: "Karácsony / Születés" },
+                { id: 2, year: 2003, url: "https://unokak.github.io/Abris/Abris-itthon.jpg", caption: "Otthon" }
             ];
             renderPhotos(targetKey, samplePhotos, container);
             return;
@@ -181,7 +181,7 @@ function renderPhotos(kidId, photosArray, container) {
         const photoTitle = photo.caption || photo.title || 'Nincs megjegyzés';
 
         card.innerHTML = `
-            <img src="${photo.url}" alt="${photoTitle}" style="max-width: 100%; border-radius: 8px;" onerror="this.style.display='none'; this.insertAdjacentHTML('afterend', '<p style=\\'color: #ff9999;\\'>Kép nem található ezen az útvonalon: ${photo.url}</p>');">
+            <img src="${photo.url}" alt="${photoTitle}" style="max-width: 100%; border-radius: 8px;" onerror="this.style.display='none'; this.insertAdjacentHTML('afterend', '<p style=\\'color: #ff9999;\\'>Kép nem található: ${photo.url}</p>');">
             <div class="photo-info" style="margin-top: 8px;">
                 <p style="color: white;">${photoTitle} (${photo.year || ''})</p>
                 ${adminButtons}
