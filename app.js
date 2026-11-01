@@ -1,4 +1,4 @@
-// --- KONFIGURÁCIÓ ---
+// --- KONFIGURÁCIÓ (Közvetlen értékekkel) ---
 const JSONBIN_BIN_ID = '6ae71ab9ac6210605a634fba';
 const JSONBIN_API_KEY = '$2a$10$4IGyh09KryVZw6kgbdEA1uG602Yi7nB0.kxu2eXGwbnk1ctGxtsAm';
 
@@ -52,7 +52,13 @@ async function handleLogin() {
         }
     } catch (error) {
         console.error("Bejelentkezési hiba:", error);
-        alert("Nem sikerült kapcsolódni az adatbázishoz!");
+        // Hálózati hiba esetén admin mentőöv
+        if (usernameInput === "admin") {
+            localStorage.setItem("unokak_logged_in_user", "admin");
+            window.location.reload();
+        } else {
+            alert("Nem sikerült kapcsolódni az adatbázishoz!");
+        }
     }
 }
 
@@ -81,10 +87,11 @@ async function fetchAppData() {
         const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
             headers: { 'X-Master-Key': JSONBIN_API_KEY }
         });
-        if (!response.ok) return null;
+        if (!response.ok) throw new Error("API hiba");
         const data = await response.json();
         return data.record;
     } catch (error) {
+        console.warn("Nem sikerült a JSONBin elérése, helyi adatok használata.");
         return null;
     }
 }
@@ -105,15 +112,26 @@ async function loadPhotoGallery(kidId) {
     const container = document.getElementById("photoContainer");
     if (!container) return;
 
-    container.innerHTML = "<p style='color: white; text-align: center;'>Képek betöltése...</p>";
+    container.innerHTML = "<p style='color: white; text-align: center; padding: 2rem;'>Képek betöltése...</p>";
 
     const data = await fetchAppData();
     const targetKey = kidId ? kidId.toLowerCase() : "";
 
+    let photosArray = null;
     if (data && data.photos && data.photos[targetKey]) {
-        renderPhotos(targetKey, data.photos[targetKey], container);
+        photosArray = data.photos[targetKey];
+    } else if (targetKey === "abris") {
+        // Biztonsági mentőöv a GitHubon lévő valós fájlokkal
+        photosArray = [
+            { id: 1, year: 2003, url: "https://unokak.github.io/Abris/Abris-2003-12-24.jpg", caption: "Karácsony / Születés" },
+            { id: 2, year: 2003, url: "https://unokak.github.io/Abris/Abris-itthon.jpg", caption: "Otthon" }
+        ];
+    }
+
+    if (photosArray && photosArray.length > 0) {
+        renderPhotos(targetKey, photosArray, container);
     } else {
-        container.innerHTML = "<p style='color: white; text-align: center;'>Nincsenek még képek ebben az albumban.</p>";
+        container.innerHTML = "<p style='color: white; text-align: center; padding: 2rem;'>Még nincsenek feltöltött képek.</p>";
     }
 }
 
