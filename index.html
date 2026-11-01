@@ -170,9 +170,9 @@
     <script>
         // --- KONFIGURÁCIÓ (JSONBin.io adatok) ---
         const JSONBIN_BIN_ID = "6ae71ab9ac6210605a634fba"; // A te Bin ID-d
-        const JSONBIN_API_KEY = "$2a$10$qWK3dCVPqDgz6rBchuQgceNsK3VnvrClG.B0mKPXNFdcuS/pcIYhC"; // A te Master Key-d
+        const JSONBIN_API_KEY = "$2a$10$..."; // A te Master Key-d
 
-        // Alapértelmezett adatszerkezet védelem
+        // Alapértelmezett adatszerkezet
         let dbData = {
             grandkids: [
                 { id: "abris", name: "Ábris", image: "https://images.unsplash.com/photo-1543332164-6e82f355badc?auto=format&fit=crop&w=600&q=80" },
@@ -187,7 +187,7 @@
 
         let currentUser = null;
 
-        // Adatok betöltése induláskor a JSONBin-ről
+        // Adatok betöltése induláskor a JSONBin-ről (teljeskörű védelemmel)
         async function loadData() {
             if(!JSONBIN_BIN_ID || JSONBIN_BIN_ID.includes("IDE_MASOLD")) {
                 initApp();
@@ -200,9 +200,9 @@
                 const result = await response.json();
                 if (result && result.record) {
                     dbData = {
-                        grandkids: result.record.grandkids || dbData.grandkids,
-                        users: result.record.users || dbData.users,
-                        photos: result.record.photos || []
+                        grandkids: Array.isArray(result.record.grandkids) ? result.record.grandkids : dbData.grandkids,
+                        users: Array.isArray(result.record.users) ? result.record.users : dbData.users,
+                        photos: Array.isArray(result.record.photos) ? result.record.photos : []
                     };
                 }
             } catch (err) {
@@ -214,6 +214,9 @@
         // Adatok mentése a JSONBin-re
         async function saveData() {
             try {
+                // Mentés előtt biztosítjuk, hogy a photos mindig tömb legyen
+                if (!Array.isArray(dbData.photos)) dbData.photos = [];
+
                 await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
                     method: 'PUT',
                     headers: {
@@ -309,7 +312,8 @@
             if(!grandkid) return;
             document.getElementById('galleryTitle').innerText = `${grandkid.name} fejlődése képekben`;
 
-            const gPhotos = (dbData.photos || []).filter(p => p.grandkidId === grandkidId);
+            const photosList = Array.isArray(dbData.photos) ? dbData.photos : [];
+            const gPhotos = photosList.filter(p => p.grandkidId === grandkidId);
             const years = [...new Set(gPhotos.map(p => p.year))].sort((a,b) => b - a);
 
             const yearContainer = document.getElementById('yearFilterContainer');
@@ -323,7 +327,8 @@
         }
 
         function filterYear(grandkidId, year) {
-            const gPhotos = (dbData.photos || []).filter(p => p.grandkidId === grandkidId);
+            const photosList = Array.isArray(dbData.photos) ? dbData.photos : [];
+            const gPhotos = photosList.filter(p => p.grandkidId === grandkidId);
             if (year === 'all') {
                 displayPhotos(gPhotos);
             } else {
@@ -370,7 +375,7 @@
 
             const list = document.getElementById('adminPhotoList');
             list.innerHTML = '';
-            const photos = dbData.photos || [];
+            const photos = Array.isArray(dbData.photos) ? dbData.photos : [];
             
             if(photos.length === 0) {
                 list.innerHTML = `<p class="text-sm text-slate-400">Nincs még rögzített kép.</p>`;
@@ -408,7 +413,7 @@
                 order: parseInt(document.getElementById('photoOrder').value) || 1
             };
 
-            if (!dbData.photos) dbData.photos = [];
+            if (!Array.isArray(dbData.photos)) dbData.photos = [];
 
             if (id !== "") {
                 dbData.photos[parseInt(id)] = photoData;
@@ -439,6 +444,7 @@
 
         async function deletePhoto(index) {
             if (confirm("Biztosan törölni szeretnéd ezt a képet?")) {
+                if (!Array.isArray(dbData.photos)) dbData.photos = [];
                 dbData.photos.splice(index, 1);
                 await saveData();
                 renderAdminData();
@@ -457,7 +463,7 @@
             const u = document.getElementById('newUsername').value;
             const p = document.getElementById('newPassword').value;
 
-            if (!dbData.users) dbData.users = [];
+            if (!Array.isArray(dbData.users)) dbData.users = [];
             
             if (dbData.users.some(user => user.username === u)) {
                 alert("Ez a felhasználónév már létezik!");
