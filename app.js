@@ -4,11 +4,9 @@ function checkLoginState() {
 }
 
 async function handleLogin() {
-    // Megkeressük a bejelentkezési dobozon (modal) belüli összes input mezőt
     const modal = document.querySelector("#loginModal") || document.querySelector(".modal") || document.body;
     const inputs = modal.querySelectorAll("input");
 
-    // Az első input a felhasználónév, a második a jelszó
     const usernameInput = inputs[0]?.value.trim();
     const passwordInput = inputs[1]?.value.trim();
 
@@ -18,12 +16,20 @@ async function handleLogin() {
     }
 
     try {
+        // Biztonságos lekérdezés a JSONBin-ből
         const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
-            headers: { 'X-Master-Key': JSONBIN_API_KEY }
+            method: 'GET',
+            headers: {
+                'X-Master-Key': JSONBIN_API_KEY,
+                'Content-Type': 'application/json'
+            }
         });
-        if (!response.ok) throw new Error("Hiba az adatbázis elérésekor");
+
+        if (!response.ok) {
+            throw new Error(`Szerver hiba: ${response.status}`);
+        }
+
         const data = await response.json();
-        
         const users = data.record.users || [];
         const user = users.find(u => u.username === usernameInput && u.password === passwordInput);
 
@@ -34,9 +40,10 @@ async function handleLogin() {
             alert("Hibás felhasználónév vagy jelszó!");
         }
     } catch (error) {
-        console.error("Bejelentkezési hiba:", error);
-        alert("Nem sikerült kapcsolódni az adatbázishoz!");
+        console.error("Bejelentkezési hiba részletei:", error);
+        alert("Nem sikerült kapcsolódni az adatbázishoz! Ellenőrizd az internetkapcsolatot vagy a kulcsokat.");
     }
+}
 }// --- FŐ INDÍTÓ ÉS VÉDELEM ---
 document.addEventListener("DOMContentLoaded", () => {
     const currentUser = localStorage.getItem("unokak_logged_in_user");
