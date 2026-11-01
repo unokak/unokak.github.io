@@ -1,10 +1,13 @@
-// Automatikus belépés-ellenőrzés védett oldalakon
+// Biztonságos belépés-ellenőrzés
 document.addEventListener("DOMContentLoaded", () => {
     const currentUser = localStorage.getItem("unokak_logged_in_user");
-    const isLoginPage = window.location.pathname.includes("index.html") || window.location.pathname === "/" || window.location.pathname.endsWith("/");
+    const path = window.location.pathname;
+    
+    // Engedélyezett oldalak, ahová belépés nélkül is be lehet lépni (főoldal, bejelentkezés)
+    const isPublicPage = path.endsWith("index.html") || path === "/" || path === "" || path.endsWith("/");
 
-    // Ha a felhasználó nincs bejelentkezve, és nem a főoldalon/bejelentkezésen van, azonnal kidobjuk
-    if (!currentUser && !isLoginPage) {
+    // Ha nincsen bejelentkezett felhasználó, ÉS nem a nyilvános főoldalon vagyunk, akkor irány vissza a főoldalra
+    if (!currentUser && !isPublicPage) {
         window.location.href = "index.html";
     }
 });
