@@ -4,6 +4,7 @@ function checkLoginState() {
 }
 
 async function handleLogin() {
+    // Megkeressük a bejelentkezési dobozon belüli input mezőket
     const modal = document.querySelector("#loginModal") || document.querySelector(".modal") || document.body;
     const inputs = modal.querySelectorAll("input");
 
@@ -16,7 +17,6 @@ async function handleLogin() {
     }
 
     try {
-        // Biztonságos lekérdezés a JSONBin-ből
         const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
             method: 'GET',
             headers: {
@@ -44,7 +44,8 @@ async function handleLogin() {
         alert("Nem sikerült kapcsolódni az adatbázishoz! Ellenőrizd az internetkapcsolatot vagy a kulcsokat.");
     }
 }
-}// --- FŐ INDÍTÓ ÉS VÉDELEM ---
+
+// --- FŐ INDÍTÓ ÉS VÉDELEM ---
 document.addEventListener("DOMContentLoaded", () => {
     const currentUser = localStorage.getItem("unokak_logged_in_user");
     const page = window.location.pathname;
