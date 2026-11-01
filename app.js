@@ -19,8 +19,9 @@ function closeLoginModal() {
 
 // --- 2. BEJELENTKEZÉS KEZELÉSE ---
 async function handleLogin() {
-    const usernameInput = document.getElementById("username")?.value.trim();
-    const passwordInput = document.getElementById("password")?.value.trim();
+    // Biztosra megyünk: közvetlenül a szöveges és jelszó mezőket keressük típus alapján
+    const usernameInput = document.querySelector("input[type='text']")?.value.trim();
+    const passwordInput = document.querySelector("input[type='password']")?.value.trim();
 
     if (!usernameInput || !passwordInput) {
         alert("Kérlek add meg a felhasználónevet és a jelszót!");
