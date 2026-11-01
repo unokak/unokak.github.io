@@ -3,18 +3,19 @@ function checkLoginState() {
     return localStorage.getItem("unokak_logged_in_user");
 }
 
+function isAdmin() {
+    const user = localStorage.getItem("unokak_logged_in_user");
+    return user === "admin" || user === "Timi";
+}
+
 function openLoginModal() {
     const modal = document.getElementById("loginModal");
-    if (modal) {
-        modal.style.display = "block";
-    }
+    if (modal) modal.style.display = "block";
 }
 
 function closeLoginModal() {
     const modal = document.getElementById("loginModal");
-    if (modal) {
-        modal.style.display = "none";
-    }
+    if (modal) modal.style.display = "none";
 }
 
 // --- 2. BEJELENTKEZÉS KEZELÉSE ---
@@ -124,7 +125,6 @@ function initApp() {
     }
 }
 
-// HIÁNYZÓ FÜGGVÉNY PÓTLÁSA AZ UNOKA.HTML SZÁMÁRA:
 function loadKidGallery(kidId) {
     loadPhotoGallery(kidId);
 }
@@ -136,14 +136,12 @@ async function loadPhotoGallery(kidId) {
     container.innerHTML = "<p style='color: white; text-align: center; padding: 2rem;'>Adatok betöltése...</p>";
 
     const data = await fetchAppData();
-    
-    // Ha a JSONBin lekérdezés a 401 miatt nem adna vissza adatot, de van helyi teszt adat vagy kezelni akarjuk
     const targetKey = kidId ? kidId.toLowerCase() : "";
 
     if (data && data.photos && data.photos[targetKey]) {
         renderPhotos(targetKey, data.photos[targetKey], container);
     } else {
-        // Helyi mentőöv teszteléshez, ha a JSONBin 401-gyel elutasítaná a kulcsot
+        // Helyi mentőöv teszteléshez
         if (targetKey === "abris") {
             const samplePhotos = [
                 { id: 1793533936988, year: 2003, url: "https://unokak.github.io/Abris/Abris-szuletés.jpg", caption: "születés" },
@@ -163,8 +161,7 @@ async function loadPhotoGallery(kidId) {
 }
 
 function renderPhotos(kidId, photosArray, container) {
-    const currentUser = localStorage.getItem("unokak_logged_in_user");
-    const isAdmin = currentUser === "admin" || currentUser === "Timi";
+    const admin = isAdmin();
 
     container.innerHTML = "";
     photosArray.forEach((photo, index) => {
@@ -172,7 +169,7 @@ function renderPhotos(kidId, photosArray, container) {
         card.className = "photo-card";
         
         let adminButtons = '';
-        if (isAdmin) {
+        if (admin) {
             adminButtons = `
                 <div class="admin-controls" style="margin-top: 10px;">
                     <button onclick="editPhoto('${kidId}', ${index})" class="btn-edit">Szerk</button>
@@ -184,7 +181,7 @@ function renderPhotos(kidId, photosArray, container) {
         const photoTitle = photo.caption || photo.title || 'Nincs megjegyzés';
 
         card.innerHTML = `
-            <img src="${photo.url}" alt="${photoTitle}" style="max-width: 100%; border-radius: 8px;">
+            <img src="${photo.url}" alt="${photoTitle}" style="max-width: 100%; border-radius: 8px;" onerror="this.style.display='none'; this.insertAdjacentHTML('afterend', '<p style=\\'color: #ff9999;\\'>Kép nem található ezen az útvonalon: ${photo.url}</p>');">
             <div class="photo-info" style="margin-top: 8px;">
                 <p style="color: white;">${photoTitle} (${photo.year || ''})</p>
                 ${adminButtons}
