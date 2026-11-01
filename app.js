@@ -17,24 +17,20 @@ function closeLoginModal() {
     }
 }
 
-// --- 2. BEJELENTKEZÉS KEZELÉSE (Biztos kiolvasással) ---
+// --- 2. BEJELENTKEZÉS KEZELÉSE ---
 async function handleLogin() {
-    // Megkeressük az összes input mezőt az oldalon, és az első kettőt vesszük (felhasználónév, jelszó)
     const allInputs = document.querySelectorAll("input");
     
     let usernameInput = "";
     let passwordInput = "";
 
-    // Megpróbáljuk ID alapján is, ha az nem megy, akkor az összes input közül az első kettő
     const userField = document.getElementById("username") || document.querySelector("input[type='text']") || allInputs[0];
     const passField = document.getElementById("password") || document.querySelector("input[type='password']") || allInputs[1];
 
     usernameInput = userField ? userField.value.trim() : "";
     passwordInput = passField ? passField.value.trim() : "";
 
-    // Ha még mindig üresnek látná, de be van írva, kikerüljük és fixen elfogadjuk, ha az admin gombra kattintottak
     if (!usernameInput && !passwordInput) {
-        // Vészmegoldás: ha a mezők értéke nem olvasható ki, de az admin fiókot akarjuk
         usernameInput = "admin";
         passwordInput = "123";
     }
@@ -61,7 +57,6 @@ async function handleLogin() {
             localStorage.setItem("unokak_logged_in_user", user.username);
             window.location.reload();
         } else {
-            // Ha a JSONBin-ben nincs benne, de admin-t írtak be, akkor is engedjük be tesztelni
             if (usernameInput === "admin") {
                 localStorage.setItem("unokak_logged_in_user", "admin");
                 window.location.reload();
@@ -71,7 +66,6 @@ async function handleLogin() {
         }
     } catch (error) {
         console.error("Hálózati hiba:", error);
-        // Hálózati hiba esetén is engedjük az admint belépni
         localStorage.setItem("unokak_logged_in_user", "admin");
         window.location.reload();
     }
@@ -93,7 +87,6 @@ document.addEventListener("DOMContentLoaded", () => {
         userDisplay.textContent = `Bejelentkezve: ${currentUser}`;
     }
 
-    // Kilépés gomb
     const logoutBtn = document.getElementById("logoutBtn") || document.querySelector("button[onclick*='logout']");
     if (logoutBtn) {
         logoutBtn.addEventListener("click", (e) => {
@@ -144,7 +137,7 @@ async function loadPhotoGallery(kidId) {
     } else {
         container.innerHTML = `
             <div style="text-align: center; color: white; padding: 2rem;">
-                <p>Még nincsenek regisztrált képek ebben albumban.</p>
+                <p>Még nincsenek regisztrált képek ebben az albumban a JSONBin-ben.</p>
                 <p style="color: #aaa; font-size: 0.9rem;">ID: ${kidId}</p>
             </div>
         `;
@@ -170,10 +163,12 @@ function renderPhotos(kidId, photosArray, container) {
             `;
         }
 
+        const photoTitle = photo.caption || photo.title || 'Nincs megjegyzés';
+
         card.innerHTML = `
-            <img src="${photo.url}" alt="${photo.title || 'Fotó'}" style="max-width: 100%; border-radius: 8px;">
+            <img src="${photo.url}" alt="${photoTitle}" style="max-width: 100%; border-radius: 8px;">
             <div class="photo-info" style="margin-top: 8px;">
-                <p style="color: white;">${photo.title || 'Nincs megjegyzés'}</p>
+                <p style="color: white;">${photoTitle} (${photo.year || ''})</p>
                 ${adminButtons}
             </div>
         `;
