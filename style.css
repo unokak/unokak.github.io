@@ -111,7 +111,10 @@ main {
 }
 
 .photo-card img {
-   object-fit: contain;
+   width: 100%;
+    height: 250px;
+    object-fit: contain;
+    background-color: #111;
 }
 
 .photo-content {
