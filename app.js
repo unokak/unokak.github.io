@@ -3,11 +3,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const currentUser = localStorage.getItem("unokak_logged_in_user");
     const page = window.location.pathname;
     
-    // Ha a főoldalon (index.html) vagyunk, vagy gyökérben, akkor mindenki szabadon beléphet
-    const isIndexPage = page.endsWith("index.html") || page === "/" || page === "" || page.endsWith("/");
+    // Megnézzük, hogy védett oldalon vagyunk-e (unoka.html vagy admin.html)
+    const isProtectedPage = page.includes("unoka.html") || page.includes("admin.html");
 
-    // Ha nincs bejelentkezve senki, ÉS NEM a főoldalon vagyunk, akkor irány vissza a főoldalra
-    if (!currentUser && !isIndexPage) {
+    // Ha védett oldalon vagyunk, de NINCS bejelentkezett felhasználó, visszadobjuk a főoldalra
+    if (isProtectedPage && !currentUser) {
         window.location.href = "index.html";
     }
 });
