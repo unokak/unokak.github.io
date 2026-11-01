@@ -20,21 +20,33 @@ document.addEventListener("DOMContentLoaded", () => {
         userDisplay.textContent = `Bejelentkezve: ${currentUser}`;
     }
 
-    // BEJELENTKEZÉS KEZELÉSE (Közvetlenül a gombra és a formra kötve)
-    const loginForm = document.getElementById("loginForm") || document.querySelector("form");
-    if (loginForm) {
-        loginForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            await performLogin();
-        });
-    }
+    // UNIVERZÁLIS KATTINTÁSFIGYELŐ A BEJELENTKEZÉSRE
+    document.addEventListener("click", async (e) => {
+        const target = e.target;
+        // Ha olyan gombra kattintottak, aminek a felirata "Belépés"
+        if (target && target.textContent && target.textContent.trim() === "Belépés") {
+            const usernameInput = document.getElementById("username")?.value.trim();
+            const passwordInput = document.getElementById("password")?.value.trim();
 
-    // Ha van külön Belépés gomb a modális ablakban
-    const submitLoginBtn = document.querySelector("#loginModal button.btn-primary, #loginForm button[type='submit'], .modal button.btn-primary");
-    if (submitLoginBtn && !loginForm) {
-        submitLoginBtn.addEventListener("click", async (e) => {
-            e.preventDefault();
-            await performLogin();
+            if (usernameInput && passwordInput) {
+                e.preventDefault();
+                await performLoginManual(usernameInput, passwordInput);
+            }
+        }
+    });
+
+    // Ha Entert nyomnak a jelszó mezőben
+    const passwordField = document.getElementById("password");
+    if (passwordField) {
+        passwordField.addEventListener("keydown", async (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                const usernameInput = document.getElementById("username")?.value.trim();
+                const passwordInput = document.getElementById("password")?.value.trim();
+                if (usernameInput && passwordInput) {
+                    await performLoginManual(usernameInput, passwordInput);
+                }
+            }
         });
     }
 });
@@ -43,15 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
 const JSONBIN_BIN_ID = '6ae71ab9ac6210605a634fba';
 const JSONBIN_API_KEY = '$2a$10$4IGyh09KryVZw6kgbdEA1uG602Yi7nB0.kxu2eXGwbnk1ctGxtsAm';
 
-async function performLogin() {
-    const usernameInput = document.getElementById("username")?.value.trim();
-    const passwordInput = document.getElementById("password")?.value.trim();
-
-    if (!usernameInput || !passwordInput) {
-        alert("Kérlek add meg a felhasználónevet és a jelszót!");
-        return;
-    }
-
+async function performLoginManual(usernameInput, passwordInput) {
     try {
         const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
             headers: { 'X-Master-Key': JSONBIN_API_KEY }
