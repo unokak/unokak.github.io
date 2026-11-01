@@ -1,3 +1,8 @@
+// Bejelentkezési állapot ellenőrzése
+function checkLoginState() {
+    return localStorage.getItem("unokak_logged_in_user");
+}
+
 // Hiányzó segédfüggvény a hiba elkerülésére
 function checkLoginState() {
     return localStorage.getItem("unokak_logged_in_user");
