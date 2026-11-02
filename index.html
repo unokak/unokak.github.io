@@ -169,15 +169,14 @@
     <!-- JAVASCRIPT LOGIKA -->
     <script>
         // --- KONFIGURÁCIÓ (JSONBin.io adatok) ---
-        const JSONBIN_BIN_ID = "6ae71ab9ac6210605a634fba"; // A te Bin ID-d
-        const JSONBIN_API_KEY = "$2a$10$qWK3dCVPqDgz6rBchuQgceNsK3VnvrClG.B0mKPXNFdcuS/pcIYhC"; // A te Master Key-d
+        const JSONBIN_BIN_ID = "6ae71ab9ac6210605a634fba";
+        const JSONBIN_API_KEY = "$2a$10$qWK3dCVpQdgz6rBchuQgceNsK3VnvrC1G.B0mKPXNFdcuS/pcIYhC";
 
-        // Alapértelmezett adatszerkezet (Itt állítsd be az unokák saját előkép linkjeit!)
         let dbData = {
             grandkids: [
                 { id: "abris", name: "Ábris", image: "https://raw.githubusercontent.com/unokak/unokak.github.io/main/Abris/Abris-2021.jpg" },
-                { id: "gerda", name: "Gerda", image: "https://raw.githubusercontent.com/unokak/unokak.github.io/main/Gerda/Gerda-ballagasi.jpg" },
-                { id: "moira", name: "Moira", image: "https://raw.githubusercontent.com/unokak/unokak.github.io/main/Moira/Moira.jpg" }
+                { id: "gerda", name: "Gerda", image: "" },
+                { id: "moira", name: "Moira", image: "" }
             ],
             users: [
                 { username: "admin", password: "123", role: "admin" }
@@ -187,7 +186,6 @@
 
         let currentUser = null;
 
-        // Adatok betöltése (Biztonságos verzió: nem írja felül a fix unoka-beállításokat)
         async function loadData() {
             if(!JSONBIN_BIN_ID || JSONBIN_BIN_ID.includes("IDE_MASOLD")) {
                 initApp();
@@ -199,8 +197,6 @@
                 });
                 const result = await response.json();
                 if (result && result.record) {
-                    // Csak a felhasználókat és a galéria képeit töltjük be a felhőből,
-                    // az unokák alapadatait és képeit fixen a kód biztosítja!
                     if (Array.isArray(result.record.users)) dbData.users = result.record.users;
                     if (Array.isArray(result.record.photos)) dbData.photos = result.record.photos;
                 }
@@ -210,7 +206,6 @@
             initApp();
         }
 
-        // Adatok mentése a JSONBin-re
         async function saveData() {
             try {
                 if (!Array.isArray(dbData.photos)) dbData.photos = [];
@@ -307,6 +302,7 @@
             }
         }
 
+        // MÓDOSÍTOTT GALÉRIA RENDSZER: Alapból a legelső (legrégebbi) év képeit mutatja
         function renderGallery(grandkidId) {
             const grandkid = (dbData.grandkids || []).find(g => g.id === grandkidId);
             if(!grandkid) return;
@@ -314,26 +310,42 @@
 
             const photosList = Array.isArray(dbData.photos) ? dbData.photos : [];
             const gPhotos = photosList.filter(p => p.grandkidId === grandkidId);
-            const years = [...new Set(gPhotos.map(p => p.year))].sort((a,b) => b - a);
+            
+            // Évek listázása növekvő sorrendben (pl. 2003, 2004, 2005...)
+            const years = [...new Set(gPhotos.map(p => p.year))].sort((a,b) => a - b);
 
             const yearContainer = document.getElementById('yearFilterContainer');
-            yearContainer.innerHTML = `<button onclick="filterYear('${grandkidId}', 'all')" class="px-3 py-1.5 bg-amber-600 text-white rounded text-sm font-semibold">Összes év</button>`;
-            
-            years.forEach(year => {
-                yearContainer.innerHTML += `<button onclick="filterYear('${grandkidId}', '${year}')" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded text-sm">${year}</button>`;
+            yearContainer.innerHTML = '';
+
+            if (years.length === 0) {
+                document.getElementById('galleryGrid').innerHTML = `<p class="col-span-full text-center text-slate-400 py-12">Még nincsenek feltöltött képek ehhez az unokához.</p>`;
+                return;
+            }
+
+            // Gombok generálása az évekhez
+            years.forEach((year, index) => {
+                const isActive = (index === 0); // Az első év az alapértelmezett
+                const btnClass = isActive ? "px-3 py-1.5 bg-amber-600 text-white rounded text-sm font-semibold year-btn" : "px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded text-sm year-btn";
+                yearContainer.innerHTML += `<button onclick="filterYear('${grandkidId}', '${year}', this)" class="${btnClass}">${year}</button>`;
             });
 
-            displayPhotos(gPhotos);
+            // Alapból a legelső év képeinek megjelenítése
+            filterYear(grandkidId, years[0], yearContainer.querySelector('.year-btn'));
         }
 
-        function filterYear(grandkidId, year) {
-            const photosList = Array.isArray(dbData.photos) ? dbData.photos : [];
-            const gPhotos = photosList.filter(p => p.grandkidId === grandkidId);
-            if (year === 'all') {
-                displayPhotos(gPhotos);
-            } else {
-                displayPhotos(gPhotos.filter(p => p.year == year));
+        function filterYear(grandkidId, year, clickedBtn) {
+            // Gombok stílusának frissítése (aktív/inaktív)
+            const buttons = document.querySelectorAll('#yearFilterContainer button');
+            buttons.forEach(btn => {
+                btn.className = "px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded text-sm year-btn";
+            });
+            if(clickedBtn) {
+                clickedBtn.className = "px-3 py-1.5 bg-amber-600 text-white rounded text-sm font-semibold year-btn";
             }
+
+            const photosList = Array.isArray(dbData.photos) ? dbData.photos : [];
+            const gPhotos = photosList.filter(p => p.grandkidId === grandkidId && p.year == year);
+            displayPhotos(gPhotos);
         }
 
         function displayPhotos(photosArray) {
@@ -343,7 +355,7 @@
             photosArray.sort((a, b) => (a.order || 0) - (b.order || 0));
 
             if (photosArray.length === 0) {
-                grid.innerHTML = `<p class="col-span-full text-center text-slate-400 py-12">Még nincsenek feltöltött képek ehhez az unokához vagy évhez.</p>`;
+                grid.innerHTML = `<p class="col-span-full text-center text-slate-400 py-12">Ebben az évben még nincsenek képek.</p>`;
                 return;
             }
 
@@ -472,7 +484,7 @@
 
             dbData.users.push({ username: u, password: p, role: "admin" });
             await saveData();
-            document.getElementById('userForm').reset();
+            document.getElementById('userForm'].reset();
             showAlert(`Új felhasználó (${u}) sikeresen rögzítve!`, "bg-green-600 text-white");
         }
 
@@ -486,8 +498,8 @@
 
         function handleLogin(event) {
             event.preventDefault();
-            const u = document.getElementById('loginUser').value;
-            const p = document.getElementById('loginPass').value;
+            const u = document.getElementById('loginUser'].value;
+            const p = document.getElementById('loginPass'].value;
 
             const foundUser = (dbData.users || []).find(user => user.username === u && user.password === p);
             if (foundUser) {
