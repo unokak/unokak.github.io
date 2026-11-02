@@ -112,7 +112,7 @@
                     </form>
                 </div>
 
-                <!-- Felhasználók Kezelése & Mentett adatok -->
+                <!-- Felhasználók Kezelése & Meglévő képek szűrése/kezelése -->
                 <div class="space-y-8">
                     <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
                         <h3 class="text-xl font-bold text-amber-400 mb-4">Új felhasználó (admin jog) felvétele</h3>
@@ -130,9 +130,25 @@
                     </div>
 
                     <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
-                        <h3 class="text-xl font-bold text-amber-400 mb-4">Meglévő képek kezelése</h3>
-                        <div id="adminPhotoList" class="space-y-2 max-h-60 overflow-y-auto pr-2">
-                            <!-- Képek listája gyors szerkesztéshez/törléshez -->
+                        <h3 class="text-xl font-bold text-amber-400 mb-4">Meglévő képek kezelése (Szűrés)</h3>
+                        
+                        <div class="grid grid-cols-2 gap-3 mb-4">
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1">Szűrés unokára</label>
+                                <select id="adminFilterGrandkid" onchange="renderAdminPhotoList()" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-sm text-white">
+                                    <option value="all">Minden unoka</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1">Szűrés évre</label>
+                                <select id="adminFilterYear" onchange="renderAdminPhotoList()" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-sm text-white">
+                                    <option value="all">Minden év</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="adminPhotoList" class="space-y-2 max-h-72 overflow-y-auto pr-2">
+                            <!-- Szűrt képek listája -->
                         </div>
                     </div>
                 </div>
@@ -168,7 +184,6 @@
 
     <!-- JAVASCRIPT LOGIKA -->
     <script>
-        // --- KONFIGURÁCIÓ (JSONBin.io adatok) ---
         const JSONBIN_BIN_ID = "6ae71ab9ac6210605a634fba";
         const JSONBIN_API_KEY = "$2a$10$qWK3dCVpQdgz6rBchuQgceNsK3VnvrC1G.B0mKPXNFdcuS/pcIYhC";
 
@@ -185,6 +200,8 @@
         };
 
         let currentUser = null;
+        let currentGalleryGrandkid = null;
+        let currentGalleryYear = null;
 
         async function loadData() {
             if(!JSONBIN_BIN_ID || JSONBIN_BIN_ID.includes("IDE_MASOLD")) {
@@ -280,6 +297,10 @@
                 authNav.innerHTML = `<button onclick="openLoginModal()" class="px-3 py-2 rounded bg-amber-600 hover:bg-amber-500 font-semibold transition"><i class="fa-solid fa-right-to-bracket mr-1"></i> Belépés</button>`;
                 document.getElementById('adminQuickAccess').classList.add('hidden');
             }
+            // Ha épp galériát nézünk, frissítsük az admin gombok miatt
+            if (currentGalleryGrandkid && currentGalleryYear) {
+                filterYear(currentGalleryGrandkid, currentGalleryYear, document.querySelector('.year-btn.bg-amber-600'));
+            }
         }
 
         function renderHome() {
@@ -302,16 +323,14 @@
             }
         }
 
-        // MÓDOSÍTOTT GALÉRIA RENDSZER: Alapból a legelső (legrégebbi) év képeit mutatja
         function renderGallery(grandkidId) {
+            currentGalleryGrandkid = grandkidId;
             const grandkid = (dbData.grandkids || []).find(g => g.id === grandkidId);
             if(!grandkid) return;
             document.getElementById('galleryTitle').innerText = `${grandkid.name} fejlődése képekben`;
 
             const photosList = Array.isArray(dbData.photos) ? dbData.photos : [];
             const gPhotos = photosList.filter(p => p.grandkidId === grandkidId);
-            
-            // Évek listázása növekvő sorrendben (pl. 2003, 2004, 2005...)
             const years = [...new Set(gPhotos.map(p => p.year))].sort((a,b) => a - b);
 
             const yearContainer = document.getElementById('yearFilterContainer');
@@ -319,22 +338,23 @@
 
             if (years.length === 0) {
                 document.getElementById('galleryGrid').innerHTML = `<p class="col-span-full text-center text-slate-400 py-12">Még nincsenek feltöltött képek ehhez az unokához.</p>`;
+                currentGalleryYear = null;
                 return;
             }
 
-            // Gombok generálása az évekhez
             years.forEach((year, index) => {
-                const isActive = (index === 0); // Az első év az alapértelmezett
+                const isActive = (index === 0);
                 const btnClass = isActive ? "px-3 py-1.5 bg-amber-600 text-white rounded text-sm font-semibold year-btn" : "px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded text-sm year-btn";
                 yearContainer.innerHTML += `<button onclick="filterYear('${grandkidId}', '${year}', this)" class="${btnClass}">${year}</button>`;
             });
 
-            // Alapból a legelső év képeinek megjelenítése
             filterYear(grandkidId, years[0], yearContainer.querySelector('.year-btn'));
         }
 
         function filterYear(grandkidId, year, clickedBtn) {
-            // Gombok stílusának frissítése (aktív/inaktív)
+            currentGalleryGrandkid = grandkidId;
+            currentGalleryYear = year;
+
             const buttons = document.querySelectorAll('#yearFilterContainer button');
             buttons.forEach(btn => {
                 btn.className = "px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded text-sm year-btn";
@@ -344,8 +364,10 @@
             }
 
             const photosList = Array.isArray(dbData.photos) ? dbData.photos : [];
-            const gPhotos = photosList.filter(p => p.grandkidId === grandkidId && p.year == year);
-            displayPhotos(gPhotos);
+            // Megkeressük a képeket az eredeti indexükkel együtt, hogy admin módban tudjuk szerkeszteni/törölni/mozgatni
+            const gPhotosWithIndex = photosList.map((p, originalIndex) => ({ ...p, originalIndex })).filter(p => p.grandkidId === grandkidId && p.year == year);
+            
+            displayPhotos(gPhotosWithIndex);
         }
 
         function displayPhotos(photosArray) {
@@ -359,55 +381,121 @@
                 return;
             }
 
-            photosArray.forEach(p => {
+            photosArray.forEach((p, idx) => {
+                let adminButtons = '';
+                if (currentUser) {
+                    // Gyorsadmin gombok a kép alatt (Módosítás, Törlés, Mozgatás balra/jobbra)
+                    adminButtons = `
+                        <div class="mt-3 pt-3 border-t border-slate-700 flex items-center justify-between bg-slate-900 p-2 rounded">
+                            <div class="flex space-x-1">
+                                <button onclick="movePhotoOrder(${p.originalIndex}, -1)" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-xs text-amber-400" title="Előrébb (kisebb sorrend)"><i class="fa-solid fa-chevron-left"></i></button>
+                                <button onclick="movePhotoOrder(${p.originalIndex}, 1)" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-xs text-amber-400" title="Hátrább (nagyobb sorrend)"><i class="fa-solid fa-chevron-right"></i></button>
+                            </div>
+                            <span class="text-xs text-slate-400">Sorrend: ${p.order || 1}</span>
+                            <div class="flex space-x-1">
+                                <button onclick="quickEditPhoto(${p.originalIndex})" class="px-2 py-1 bg-blue-600 hover:bg-blue-500 rounded text-xs text-white" title="Módosítás"><i class="fa-solid fa-pen"></i></button>
+                                <button onclick="deletePhoto(${p.originalIndex})" class="px-2 py-1 bg-red-600 hover:bg-red-500 rounded text-xs text-white" title="Törlés"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </div>
+                    `;
+                }
+
                 grid.innerHTML += `
-                    <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow-md flex flex-col justify-between">
+                    <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow-md flex flex-col justify-between p-4">
                         <div>
-                            <div class="relative bg-slate-950 flex items-center justify-center">
+                            <div class="relative bg-slate-950 flex items-center justify-center rounded-lg overflow-hidden">
                                 <img src="${p.url}" alt="Fejlődési kép" class="w-full h-64 object-contain bg-slate-950">
                                 <span class="absolute top-2 right-2 bg-amber-600 text-white text-xs font-bold px-2 py-1 rounded">${p.year}</span>
                             </div>
-                            <div class="p-4">
+                            <div class="mt-3">
                                 <p class="text-slate-200 text-sm whitespace-pre-wrap">${p.caption || 'Nincs megjegyzés.'}</p>
                             </div>
                         </div>
+                        ${adminButtons}
                     </div>
                 `;
             });
         }
 
+        // Gyors admin funkciók közvetlen galériából
+        function quickEditPhoto(index) {
+            showAdminView();
+            editPhoto(index);
+        }
+
+        async function movePhotoOrder(index, direction) {
+            if (!Array.isArray(dbData.photos)) return;
+            if (dbData.photos[index]) {
+                let currentOrder = dbData.photos[index].order || 1;
+                dbData.photos[index].order = currentOrder + direction;
+                try {
+                    await saveData();
+                    filterYear(currentGalleryGrandkid, currentGalleryYear, document.querySelector('.year-btn.bg-amber-600'));
+                    showAlert("Sorrend módosítva!", "bg-green-600 text-white");
+                } catch(e) {
+                    showAlert("Hiba a sorrend mentésekor!", "bg-red-600 text-white");
+                }
+            }
+        }
+
         function renderAdminData() {
             const select = document.getElementById('photoGrandkid');
             select.innerHTML = '';
+            
+            const filterGrandkidSelect = document.getElementById('adminFilterGrandkid');
+            filterGrandkidSelect.innerHTML = '<option value="all">Minden unoka</option>';
+
             if (dbData.grandkids) {
                 dbData.grandkids.forEach(g => {
                     select.innerHTML += `<option value="${g.id}">${g.name}</option>`;
+                    filterGrandkidSelect.innerHTML += `<option value="${g.id}">${g.name}</option>`;
                 });
             }
 
+            const photos = Array.isArray(dbData.photos) ? dbData.photos : [];
+            const years = [...new Set(photos.map(p => p.year))].sort((a,b) => b - a);
+            const filterYearSelect = document.getElementById('adminFilterYear');
+            filterYearSelect.innerHTML = '<option value="all">Minden év</option>';
+            years.forEach(y => {
+                filterYearSelect.innerHTML += `<option value="${y}">${y}</option>`;
+            });
+
+            renderAdminPhotoList();
+        }
+
+        function renderAdminPhotoList() {
             const list = document.getElementById('adminPhotoList');
             list.innerHTML = '';
-            const photos = Array.isArray(dbData.photos) ? dbData.photos : [];
             
-            if(photos.length === 0) {
-                list.innerHTML = `<p class="text-sm text-slate-400">Nincs még rögzített kép.</p>`;
+            const selectedGrandkid = document.getElementById('adminFilterGrandkid').value;
+            const selectedYear = document.getElementById('adminFilterYear').value;
+            const photos = Array.isArray(dbData.photos) ? dbData.photos : [];
+
+            const filteredPhotos = photos.map((p, originalIndex) => ({ ...p, originalIndex })).filter(p => {
+                const matchGrandkid = (selectedGrandkid === 'all' || p.grandkidId === selectedGrandkid);
+                const matchYear = (selectedYear === 'all' || p.year == selectedYear);
+                return matchGrandkid && matchYear;
+            });
+
+            if(filteredPhotos.length === 0) {
+                list.innerHTML = `<p class="text-sm text-slate-400 text-center py-4">Nincs a szűrésnek megfelelő kép.</p>`;
                 return;
             }
 
-            photos.forEach((p, index) => {
+            filteredPhotos.forEach(p => {
                 const g = (dbData.grandkids || []).find(x => x.id === p.grandkidId);
                 list.innerHTML += `
                     <div class="flex items-center justify-between bg-slate-900 p-3 rounded border border-slate-700 text-sm">
                         <div class="flex items-center space-x-3 overflow-hidden">
                             <img src="${p.url}" class="w-10 h-10 object-contain bg-slate-950 rounded">
                             <div class="truncate">
-                                <p class="font-bold text-amber-400">${g ? g.name : 'Ismeretlen'} (${p.year})</p>
+                                <p class="font-bold text-amber-400">${g ? g.name : 'Ismeretlen'} (${p.year}) - Sorrend: ${p.order || 1}</p>
                                 <p class="text-xs text-slate-400 truncate">${p.caption || 'Nincs szöveg'}</p>
                             </div>
                         </div>
                         <div class="flex space-x-2 flex-shrink-0">
-                            <button onclick="editPhoto(${index})" class="px-2 py-1 bg-blue-600 hover:bg-blue-500 rounded text-xs"><i class="fa-solid fa-pen"></i></button>
-                            <button onclick="deletePhoto(${index})" class="px-2 py-1 bg-red-600 hover:bg-red-500 rounded text-xs"><i class="fa-solid fa-trash"></i></button>
+                            <button onclick="editPhoto(${p.originalIndex})" class="px-2 py-1 bg-blue-600 hover:bg-blue-500 rounded text-xs" title="Szerkesztés"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deletePhoto(${p.originalIndex})" class="px-2 py-1 bg-red-600 hover:bg-red-500 rounded text-xs" title="Törlés"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     </div>
                 `;
@@ -452,6 +540,7 @@
             document.getElementById('photoCaption').value = p.caption;
             document.getElementById('photoOrder').value = p.order || 1;
             document.getElementById('formTitle').innerText = "Kép szerkesztése";
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         async function deletePhoto(index) {
@@ -460,6 +549,9 @@
                 dbData.photos.splice(index, 1);
                 await saveData();
                 renderAdminData();
+                if (currentGalleryGrandkid && currentGalleryYear) {
+                    filterYear(currentGalleryGrandkid, currentGalleryYear, document.querySelector('.year-btn.bg-amber-600'));
+                }
                 showAlert("Kép törölve!", "bg-green-600 text-white");
             }
         }
@@ -484,7 +576,7 @@
 
             dbData.users.push({ username: u, password: p, role: "admin" });
             await saveData();
-            document.getElementById('userForm'].reset();
+            document.getElementById('userForm').reset();
             showAlert(`Új felhasználó (${u}) sikeresen rögzítve!`, "bg-green-600 text-white");
         }
 
@@ -498,15 +590,14 @@
 
         function handleLogin(event) {
             event.preventDefault();
-            const u = document.getElementById('loginUser'].value;
-            const p = document.getElementById('loginPass'].value;
+            const u = document.getElementById('loginUser').value;
+            const p = document.getElementById('loginPass').value;
 
             const foundUser = (dbData.users || []).find(user => user.username === u && user.password === p);
             if (foundUser) {
                 currentUser = u;
                 closeLoginModal();
                 renderNav();
-                showAdminView();
                 showAlert("Sikeres bejelentkezés!", "bg-green-600 text-white");
             } else {
                 alert("Hibás felhasználónév vagy jelszó!");
