@@ -209,25 +209,7 @@
                 return;
             }
             try {
-                const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
-                    headers: { 'X-Master-Key': JSONBIN_API_KEY }
-                });
-                const result = await response.json();
-                if (result && result.record) {
-                    if (Array.isArray(result.record.users)) dbData.users = result.record.users;
-                    if (Array.isArray(result.record.photos)) dbData.photos = result.record.photos;
-                }
-            } catch (err) {
-                console.error("Hiba az adatok letöltésekor:", err);
-            }
-            initApp();
-        }
-
-        async function saveData() {
-            try {
-                if (!Array.isArray(dbData.photos)) dbData.photos = [];
-
-                await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+                const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, { headers: { 'X-Master-Key': JSONBIN_API_KEY } }); const result = await response.json(); if (result && result.record) { if (Array.isArray(result.record.users)) dbData.users = result.record.users; if (Array.isArray(result.record.photos)) dbData.photos = result.record.photos; } } catch (err) { console.error("Hiba az adatok letöltésekor:", err); } initApp(); }  async function saveData() { try { if (!Array.isArray(dbData.photos)) dbData.photos = [];  await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -297,6 +279,7 @@
                 authNav.innerHTML = `<button onclick="openLoginModal()" class="px-3 py-2 rounded bg-amber-600 hover:bg-amber-500 font-semibold transition"><i class="fa-solid fa-right-to-bracket mr-1"></i> Belépés</button>`;
                 document.getElementById('adminQuickAccess').classList.add('hidden');
             }
+            // Ha épp galériát nézünk, frissítsük az admin gombok miatt
             if (currentGalleryGrandkid && currentGalleryYear) {
                 filterYear(currentGalleryGrandkid, currentGalleryYear, document.querySelector('.year-btn.bg-amber-600'));
             }
@@ -309,8 +292,8 @@
                 dbData.grandkids.forEach(g => {
                     grid.innerHTML += `
                         <div onclick="showGallery('${g.id}')" class="bg-slate-900 border border-slate-700 rounded-xl overflow-hidden shadow-lg cursor-pointer hover:border-amber-400 transition transform hover:-translate-y-1">
-                            <div class="w-full h-48 bg-slate-950 flex items-center justify-center overflow-hidden">
-                                <img src="${g.image}" alt="${g.name}" class="w-full h-48 object-contain bg-slate-950 transition-transform duration-300 hover:scale-110">
+                            <div class="w-full h-48 bg-slate-950 flex items-center justify-center">
+                                <img src="${g.image}" alt="${g.name}" class="w-full h-48 object-contain bg-slate-950">
                             </div>
                             <div class="p-4">
                                 <h3 class="text-xl font-bold text-amber-400">${g.name}</h3>
@@ -363,6 +346,7 @@
             }
 
             const photosList = Array.isArray(dbData.photos) ? dbData.photos : [];
+            // Megkeressük a képeket az eredeti indexükkel együtt, hogy admin módban tudjuk szerkeszteni/törölni/mozgatni
             const gPhotosWithIndex = photosList.map((p, originalIndex) => ({ ...p, originalIndex })).filter(p => p.grandkidId === grandkidId && p.year == year);
             
             displayPhotos(gPhotosWithIndex);
@@ -382,11 +366,12 @@
             photosArray.forEach((p, idx) => {
                 let adminButtons = '';
                 if (currentUser) {
+                    // Gyorsadmin gombok a kép alatt (Módosítás, Törlés, Mozgatás balra/jobbra)
                     adminButtons = `
                         <div class="mt-3 pt-3 border-t border-slate-700 flex items-center justify-between bg-slate-900 p-2 rounded">
                             <div class="flex space-x-1">
-                                <button onclick="movePhotoOrder(${p.originalIndex}, -1)" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-xs text-amber-400" title="Előrébb"><i class="fa-solid fa-chevron-left"></i></button>
-                                <button onclick="movePhotoOrder(${p.originalIndex}, 1)" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-xs text-amber-400" title="Hátrább"><i class="fa-solid fa-chevron-right"></i></button>
+                                <button onclick="movePhotoOrder(${p.originalIndex}, -1)" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-xs text-amber-400" title="Előrébb (kisebb sorrend)"><i class="fa-solid fa-chevron-left"></i></button>
+                                <button onclick="movePhotoOrder(${p.originalIndex}, 1)" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-xs text-amber-400" title="Hátrább (nagyobb sorrend)"><i class="fa-solid fa-chevron-right"></i></button>
                             </div>
                             <span class="text-xs text-slate-400">Sorrend: ${p.order || 1}</span>
                             <div class="flex space-x-1">
@@ -400,34 +385,5 @@
                 grid.innerHTML += `
                     <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow-md flex flex-col justify-between p-4">
                         <div>
-                            <!-- HOVER ZOOM: overflow-hidden és transition-transform a nagyításhoz -->
-                            <div class="relative bg-slate-950 flex items-center justify-center rounded-lg overflow-hidden h-64">
-                                <img src="${p.url}" alt="Fejlődési kép" class="w-full h-full object-contain bg-slate-950 transition-transform duration-300 hover:scale-110">
-                                <span class="absolute top-2 right-2 bg-amber-600 text-white text-xs font-bold px-2 py-1 rounded z-10">${p.year}</span>
-                            </div>
-                            <div class="mt-3">
-                                <p class="text-slate-200 text-sm whitespace-pre-wrap">${p.caption || 'Nincs megjegyzés.'}</p>
-                            </div>
-                        </div>
-                        ${adminButtons}
-                    </div>
-                `;
-            });
-        }
-
-        function quickEditPhoto(index) {
-            showAdminView();
-            editPhoto(index);
-        }
-
-        async function movePhotoOrder(index, direction) {
-            if (!Array.isArray(dbData.photos)) return;
-            if (dbData.photos[index]) {
-                let currentOrder = dbData.photos[index].order || 1;
-                dbData.photos[index].order = currentOrder + direction;
-                try {
-                    await saveData();
-                    filterYear(currentGalleryGrandkid, currentGalleryYear, document.querySelector('.year-btn.bg-amber-600'));
-                    showAlert("Sorrend módosítva!", "bg-green-600 text-white");
-                } catch(e) {
-                    showAlert("Hiba a sorrend mentésekor
+                            <div class="relative bg-slate-950 flex items-center justify-center rounded-lg overflow-hidden">
+                                <img src="${
