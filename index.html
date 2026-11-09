@@ -244,7 +244,6 @@
         function initApp() {
             renderNav();
             renderHome();
-            // Oldal betöltésekor alapból megnyitjuk a bejelentkezőt, mivel senki sem láthat semmit belépés nélkül
             openLoginModal();
         }
 
@@ -290,7 +289,6 @@
             const grandkidsNav = document.getElementById('grandkidsNav');
             grandkidsNav.innerHTML = '';
             
-            // Ha nincs bejelentkezve senki, a menüből is elrejtjük az unokákat
             if (currentUser && dbData.grandkids && Array.isArray(dbData.grandkids)) {
                 dbData.grandkids.forEach(g => {
                     grandkidsNav.innerHTML += `<button onclick="showGallery('${g.id}')" class="px-3 py-2 rounded bg-slate-700 hover:bg-slate-600 transition font-medium">${g.name}</button>`;
@@ -319,7 +317,6 @@
             const grid = document.getElementById('homeGrandkidsGrid');
             grid.innerHTML = '';
             
-            // Ha nincs bejelentkezve, üresen hagyjuk a főoldali rácsot is
             if (!currentUser) {
                 grid.innerHTML = `<p class="col-span-full text-slate-400">Kérjük, jelentkezz be a fenti gombbal a galériák eléréséhez.</p>`;
                 return;
@@ -598,13 +595,13 @@
         }
 
         function closeLoginModal() {
-            document.getElementById('loginModal'].classList.add('hidden'); // javitva
+            document.getElementById('loginModal').classList.add('hidden');
         }
 
         function handleLogin(event) {
             event.preventDefault();
             const u = document.getElementById('loginUser').value;
-            const p = document.getElementById('loginPass'].value;
+            const p = document.getElementById('loginPass').value;
 
             const foundUser = (dbData.users || []).find(user => user.username === u && user.password === p);
             if (foundUser) {
