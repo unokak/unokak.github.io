@@ -37,8 +37,13 @@
         <section id="homeView" class="text-center py-12">
             <div class="max-w-3xl mx-auto bg-slate-800 p-8 rounded-2xl shadow-xl border border-slate-700">
                 <h2 class="text-3xl md:text-4xl font-extrabold text-amber-400 mb-4">Üdvözöljük a Családi Fotógalériában!</h2>
-                <p class="text-slate-300 text-lg mb-8">A galériák megtekintéséhez bejelentkezés szükséges.</p>
+                <p class="text-slate-300 text-lg mb-8">Kövesd nyomon unokáink cseperedését évről évre. A galériák megtekintéséhez bejelentkezés szükséges.</p>
                 <div id="homeGrandkidsGrid" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"></div>
+                <div id="adminQuickAccess" class="hidden">
+                    <button onclick="showAdminView()" class="px-6 py-3 bg-blue-600 hover:bg-blue-500 font-bold rounded-xl shadow-lg transition text-lg">
+                        <i class="fa-solid fa-gears mr-2"></i> Adminisztrációs Vezérlőpult
+                    </button>
+                </div>
             </div>
         </section>
 
@@ -49,6 +54,18 @@
                 <div id="yearFilterContainer" class="flex flex-wrap gap-2"></div>
             </div>
             <div id="galleryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </section>
+
+        <!-- 3. ADMIN FELÜLET -->
+        <section id="adminView" class="hidden">
+            <div class="flex justify-between items-center mb-6 pb-4 border-b border-slate-700">
+                <h2 class="text-2xl font-bold text-blue-400"><i class="fa-solid fa-shield-halved mr-2"></i> Adminisztrációs Vezérlőpult</h2>
+                <button onclick="showHome()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded">Vissza a főoldalra</button>
+            </div>
+            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+                <h3 class="text-xl font-bold text-amber-400 mb-4">Feltöltött képek kezelése</h3>
+                <p class="text-slate-300 text-sm">A képek közvetlenül a GitHub mappákból (`Abris`, `Gerda`, `Moira`) töltődnek be az évszámos elnevezés alapján.</p>
+            </div>
         </section>
     </main>
 
@@ -74,7 +91,7 @@
     </div>
 
     <footer class="bg-slate-800 border-t border-slate-700 text-center py-4 text-slate-400 text-sm">
-        <p>&copy; 2026 Unokák Fejlődése Képekben</p>
+        <p>&copy; 2026 Unokák Fejlődése Képekben | Családi Adatbázis</p>
     </footer>
 
     <script>
@@ -90,11 +107,11 @@
             photos: []
         };
 
-        // Automatikus fotó-generáló: feltételezi az évek szerinti 1-től 15-ig terjedő képszámokat
+        // Automatikusan generáljuk a fotólistát a mappákból a meglévő fájlnevek alapján (2004-től 2026-ig, mappánként max 15 kép évként)
         function generatePhotos() {
             dbData.photos = [];
             
-            // Ábris: 2004 - 2026
+            // Ábris (2004 - 2026)
             for (let year = 2004; year <= 2026; year++) {
                 for (let i = 1; i <= 15; i++) {
                     dbData.photos.push({
@@ -107,8 +124,8 @@
                 }
             }
 
-            // Gerda: 2005 - 2026
-            for (let year = 2005; year <= 2026; year++) {
+            // Gerda (2004 - 2026)
+            for (let year = 2004; year <= 2026; year++) {
                 for (let i = 1; i <= 15; i++) {
                     dbData.photos.push({
                         grandkidId: "gerda",
@@ -120,7 +137,7 @@
                 }
             }
 
-            // Moira: 2007 - 2026
+            // Moira (2007 - 2026)
             for (let year = 2007; year <= 2026; year++) {
                 for (let i = 1; i <= 15; i++) {
                     dbData.photos.push({
@@ -147,6 +164,7 @@
         function hideAllViews() {
             document.getElementById('homeView').classList.add('hidden');
             document.getElementById('galleryView').classList.add('hidden');
+            document.getElementById('adminView').classList.add('hidden');
         }
 
         function showHome() {
@@ -166,6 +184,15 @@
             renderGallery(grandkidId);
         }
 
+        function showAdminView() {
+            if (!currentUser) {
+                openLoginModal();
+                return;
+            }
+            hideAllViews();
+            document.getElementById('adminView').classList.remove('hidden');
+        }
+
         function renderNav() {
             const grandkidsNav = document.getElementById('grandkidsNav');
             grandkidsNav.innerHTML = '';
@@ -182,8 +209,10 @@
                         <button onclick="logout()" class="px-3 py-1.5 rounded bg-red-600 hover:bg-red-500 text-sm transition">Kilépés</button>
                     </div>
                 `;
+                document.getElementById('adminQuickAccess').classList.remove('hidden');
             } else {
                 authNav.innerHTML = `<button onclick="openLoginModal()" class="px-3 py-2 rounded bg-amber-600 hover:bg-amber-500 font-semibold transition"><i class="fa-solid fa-right-to-bracket mr-1"></i> Belépés</button>`;
+                document.getElementById('adminQuickAccess').classList.add('hidden');
             }
         }
 
@@ -211,7 +240,6 @@
             if(!grandkid) return;
             document.getElementById('galleryTitle').innerText = `${grandkid.name} fejlődése képekben`;
 
-            // Csak azokat az éveket mutatjuk, amikhez tartozik kép
             const gPhotos = dbData.photos.filter(p => p.grandkidId === grandkidId);
             const years = [...new Set(gPhotos.map(p => p.year))].sort((a,b) => a - b);
 
@@ -249,7 +277,7 @@
                 grid.innerHTML += `
                     <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow-md flex flex-col justify-between p-4">
                         <div class="relative bg-slate-950 flex items-center justify-center rounded-lg overflow-hidden h-64">
-                            <!-- Hibaesemény kezelés: ha egy adott számú kép (pl. 2004-6.jpg) mégsem létezik a GitHubon, automatikusan elrejti, hogy ne mutasson hibás ikont -->
+                            <!-- onerror="this.closest(...).style.display='none'" automatikusan elrejti azokat a kártyákat, amelyekhez tartozó képfájl még nem létezik a mappában -->
                             <img src="${p.url}" alt="Kép" class="w-full h-full object-contain bg-slate-950 transition-transform duration-300 hover:scale-150" onerror="this.closest('.bg-slate-800').style.display='none'">
                             <span class="absolute top-2 right-2 bg-amber-600 text-white text-xs font-bold px-2 py-1 rounded z-10">${p.year}</span>
                         </div>
