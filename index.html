@@ -39,11 +39,6 @@
                 <h2 class="text-3xl md:text-4xl font-extrabold text-amber-400 mb-4">Üdvözöljük a Családi Fotógalériában!</h2>
                 <p class="text-slate-300 text-lg mb-8">Kövesd nyomon unokáink cseperedését évről évre. A galériák megtekintéséhez bejelentkezés szükséges.</p>
                 <div id="homeGrandkidsGrid" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"></div>
-                <div id="adminQuickAccess" class="hidden">
-                    <button onclick="showAdminView()" class="px-6 py-3 bg-blue-600 hover:bg-blue-500 font-bold rounded-xl shadow-lg transition text-lg">
-                        <i class="fa-solid fa-gears mr-2"></i> Adminisztrációs Vezérlőpult
-                    </button>
-                </div>
             </div>
         </section>
 
@@ -54,18 +49,6 @@
                 <div id="yearFilterContainer" class="flex flex-wrap gap-2"></div>
             </div>
             <div id="galleryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-        </section>
-
-        <!-- 3. ADMIN FELÜLET -->
-        <section id="adminView" class="hidden">
-            <div class="flex justify-between items-center mb-6 pb-4 border-b border-slate-700">
-                <h2 class="text-2xl font-bold text-blue-400"><i class="fa-solid fa-shield-halved mr-2"></i> Adminisztrációs Vezérlőpult</h2>
-                <button onclick="showHome()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded">Vissza a főoldalra</button>
-            </div>
-            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
-                <h3 class="text-xl font-bold text-amber-400 mb-4">Feltöltött képek kezelése</h3>
-                <p class="text-slate-300 text-sm">A képek közvetlenül a GitHub mappákból (`Abris`, `Gerda`, `Moira`) töltődnek be az évszámos elnevezés alapján.</p>
-            </div>
         </section>
     </main>
 
@@ -97,8 +80,8 @@
     <script>
         let dbData = {
             grandkids: [
-                { id: "abris", name: "Ábris", image: "https://raw.githubusercontent.com/unokak/unokak.github.io/main/Abris/2004-1.jpg" },
-                { id: "gerda", name: "Gerda", image: "https://raw.githubusercontent.com/unokak/unokak.github.io/main/Gerda/2005-1.jpg" },
+                { id: "abris", name: "Ábris", image: "https://raw.githubusercontent.com/unokak/unokak.github.io/main/Abris/2003-1.jpg" },
+                { id: "gerda", name: "Gerda", image: "https://raw.githubusercontent.com/unokak/unokak.github.io/main/Gerda/2004-2.jpg" },
                 { id: "moira", name: "Moira", image: "https://raw.githubusercontent.com/unokak/unokak.github.io/main/Moira/2007-1.jpg" }
             ],
             users: [
@@ -107,12 +90,12 @@
             photos: []
         };
 
-        // Automatikusan generáljuk a fotólistát a mappákból a meglévő fájlnevek alapján (2004-től 2026-ig, mappánként max 15 kép évként)
+        // Fotók automatikus generálása a megadott pontos évszámok alapján
         function generatePhotos() {
             dbData.photos = [];
             
-            // Ábris (2004 - 2026)
-            for (let year = 2004; year <= 2026; year++) {
+            // Ábris: 2003 - 2026
+            for (let year = 2003; year <= 2026; year++) {
                 for (let i = 1; i <= 15; i++) {
                     dbData.photos.push({
                         grandkidId: "abris",
@@ -124,7 +107,7 @@
                 }
             }
 
-            // Gerda (2004 - 2026)
+            // Gerda: 2004 - 2026
             for (let year = 2004; year <= 2026; year++) {
                 for (let i = 1; i <= 15; i++) {
                     dbData.photos.push({
@@ -137,7 +120,7 @@
                 }
             }
 
-            // Moira (2007 - 2026)
+            // Moira: 2007 - 2026
             for (let year = 2007; year <= 2026; year++) {
                 for (let i = 1; i <= 15; i++) {
                     dbData.photos.push({
@@ -164,7 +147,6 @@
         function hideAllViews() {
             document.getElementById('homeView').classList.add('hidden');
             document.getElementById('galleryView').classList.add('hidden');
-            document.getElementById('adminView').classList.add('hidden');
         }
 
         function showHome() {
@@ -180,17 +162,9 @@
                 return;
             }
             hideAllViews();
+            document.getElementById('galleryView').classList.add('hidden'); // placeholder
             document.getElementById('galleryView').classList.remove('hidden');
             renderGallery(grandkidId);
-        }
-
-        function showAdminView() {
-            if (!currentUser) {
-                openLoginModal();
-                return;
-            }
-            hideAllViews();
-            document.getElementById('adminView').classList.remove('hidden');
         }
 
         function renderNav() {
@@ -209,10 +183,8 @@
                         <button onclick="logout()" class="px-3 py-1.5 rounded bg-red-600 hover:bg-red-500 text-sm transition">Kilépés</button>
                     </div>
                 `;
-                document.getElementById('adminQuickAccess').classList.remove('hidden');
             } else {
                 authNav.innerHTML = `<button onclick="openLoginModal()" class="px-3 py-2 rounded bg-amber-600 hover:bg-amber-500 font-semibold transition"><i class="fa-solid fa-right-to-bracket mr-1"></i> Belépés</button>`;
-                document.getElementById('adminQuickAccess').classList.add('hidden');
             }
         }
 
@@ -223,7 +195,7 @@
                 grid.innerHTML += `
                     <div onclick="showGallery('${g.id}')" class="bg-slate-900 border border-slate-700 rounded-xl overflow-hidden shadow-lg cursor-pointer hover:border-amber-400 transition transform hover:-translate-y-1">
                         <div class="w-full h-48 bg-slate-950 flex items-center justify-center overflow-hidden">
-                            <img src="${g.image}" alt="${g.name}" class="w-full h-48 object-contain bg-slate-950 transition-transform duration-300 hover:scale-150">
+                            <img src="${g.image}" alt="${g.name}" class="w-full h-48 object-contain bg-slate-950 transition-transform duration-300 hover:scale-150" onerror="this.src='https://raw.githubusercontent.com/unokak/unokak.github.io/main/Abris/2004-1.jpg'">
                         </div>
                         <div class="p-4">
                             <h3 class="text-xl font-bold text-amber-400">${g.name}</h3>
@@ -277,7 +249,7 @@
                 grid.innerHTML += `
                     <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow-md flex flex-col justify-between p-4">
                         <div class="relative bg-slate-950 flex items-center justify-center rounded-lg overflow-hidden h-64">
-                            <!-- onerror="this.closest(...).style.display='none'" automatikusan elrejti azokat a kártyákat, amelyekhez tartozó képfájl még nem létezik a mappában -->
+                            <!-- onerror rejtette el a nem létező fájlokat, de mostantól a jó kezdőévekkel megtalálja őket -->
                             <img src="${p.url}" alt="Kép" class="w-full h-full object-contain bg-slate-950 transition-transform duration-300 hover:scale-150" onerror="this.closest('.bg-slate-800').style.display='none'">
                             <span class="absolute top-2 right-2 bg-amber-600 text-white text-xs font-bold px-2 py-1 rounded z-10">${p.year}</span>
                         </div>
