@@ -81,7 +81,7 @@
         let dbData = {
             grandkids: [
                 { id: "abris", name: "Abris", startYear: 2003, image: "https://raw.githubusercontent.com/unokak/unokak.github.io/main/Abris/2004-1.jpg" },
-                { id: "gerda", name: "Gerda", startYear: 2004, image: "https://raw.githubusercontent.com/unokak/unokak.github.io/main/Gerda/2005-1.jpg" },
+                { id: "gerda", name: "Gerda", startYear: 2004, image: "https://raw.githubusercontent.com/unokak/unok.github.io/main/Gerda/2005-1.jpg" },
                 { id: "moira", name: "Moira", startYear: 2007, image: "https://raw.githubusercontent.com/unokak/unokak.github.io/main/Moira/2007-1.jpg" }
             ],
             users: [
@@ -89,6 +89,12 @@
             ],
             photos: []
         };
+
+        // Betöltjük a mentett felhasználókat a böngészőből, ha léteznek
+        const savedUsers = localStorage.getItem('family_gallery_users');
+        if (savedUsers) {
+            try { dbData.users = JSON.parse(savedUsers); } catch(e) {}
+        }
 
         function generatePhotos() {
             dbData.photos = [];
