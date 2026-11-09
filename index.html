@@ -588,7 +588,7 @@
         }
 
         function closeLoginModal() {
-            document.getElementById('loginModal'].classList.add('hidden');
+            document.getElementById('loginModal').classList.add('hidden');
         }
 
         function handleLogin(event) {
@@ -601,7 +601,7 @@
                 currentUser = u;
                 closeLoginModal();
                 renderNav();
-                showHome(); // <-- EZ A JAVÍTÁS: Sikeres belépés után visszatér a főoldalra, frissítve a jogosultságot!
+                showHome();
                 showAlert("Sikeres bejelentkezés!", "bg-green-600 text-white");
             } else {
                 alert("Hibás felhasználónév vagy jelszó!");
