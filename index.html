@@ -80,9 +80,9 @@
     <script>
         let dbData = {
             grandkids: [
-                { id: "abris", name: "Ábris", image: "https://raw.githubusercontent.com/unokak/unokak.github.io/main/Abris/2004-1.jpg" },
-                { id: "gerda", name: "Gerda", image: "https://raw.githubusercontent.com/unokak/unokak.github.io/main/Gerda/2005-1.jpg" },
-                { id: "moira", name: "Moira", image: "https://raw.githubusercontent.com/unokak/unokak.github.io/main/Moira/2007-1.jpg" }
+                { id: "abris", name: "Ábris", startYear: 2003, image: "https://raw.githubusercontent.com/unokak/unokak.github.io/main/Abris/2004-1.jpg" },
+                { id: "gerda", name: "Gerda", startYear: 2004, image: "https://raw.githubusercontent.com/unokak/unokak.github.io/main/Gerda/2005-1.jpg" },
+                { id: "moira", name: "Moira", startYear: 2007, image: "https://raw.githubusercontent.com/unokak/unokak.github.io/main/Moira/2007-1.jpg" }
             ],
             users: [
                 { username: "admin", password: "123", role: "admin" }
@@ -90,53 +90,26 @@
             photos: []
         };
 
-        // Képek generálása 2003-tól 2026-ig minden unokánál, évként akár 20 képig
         function generatePhotos() {
             dbData.photos = [];
             
-            // Ábris: 2003 - 2026
-            for (let year = 2003; year <= 2026; year++) {
-                for (let i = 1; i <= 20; i++) {
-                    dbData.photos.push({
-                        grandkidId: "abris",
-                        year: year,
-                        url: `https://raw.githubusercontent.com/unokak/unokak.github.io/main/Abris/${year}-${i}.jpg`,
-                        caption: `Ábris ${year}. év (${i})`,
-                        order: i
-                    });
+            dbData.grandkids.forEach(g => {
+                for (let year = g.startYear; year <= 2026; year++) {
+                    for (let i = 1; i <= 15; i++) {
+                        dbData.photos.push({
+                            grandkidId: g.id,
+                            year: year,
+                            url: `https://raw.githubusercontent.com/unokak/unokak.github.io/main/${g.name}/${year}-${i}.jpg`,
+                            caption: `${g.name} ${year}. év (${i})`,
+                            order: i
+                        });
+                    }
                 }
-            }
-
-            // Gerda: 2004 - 2026
-            for (let year = 2004; year <= 2026; year++) {
-                for (let i = 1; i <= 20; i++) {
-                    dbData.photos.push({
-                        grandkidId: "gerda",
-                        year: year,
-                        url: `https://raw.githubusercontent.com/unokak/unokak.github.io/main/Gerda/${year}-${i}.jpg`,
-                        caption: `Gerda ${year}. év (${i})`,
-                        order: i
-                    });
-                }
-            }
-
-            // Moira: 2007 - 2026
-            for (let year = 2007; year <= 2026; year++) {
-                for (let i = 1; i <= 20; i++) {
-                    dbData.photos.push({
-                        grandkidId: "moira",
-                        year: year,
-                        url: `https://raw.githubusercontent.com/unokak/unokak.github.io/main/Moira/${year}-${i}.jpg`,
-                        caption: `Moira ${year}. év (${i})`,
-                        order: i
-                    });
-                }
-            }
+            });
         }
 
         let currentUser = null;
         let currentGalleryGrandkid = null;
-        let currentGalleryYear = null;
 
         function initApp() {
             generatePhotos();
@@ -211,28 +184,21 @@
             if(!grandkid) return;
             document.getElementById('galleryTitle').innerText = `${grandkid.name} fejlődése képekben`;
 
-            // Csak azok az évek jelennek meg gombként, amelyekhez tartozó kép létezik és betöltődik
-            const gPhotos = dbData.photos.filter(p => p.grandkidId === grandkidId);
-            const years = [...new Set(gPhotos.map(p => p.year))].sort((a,b) => a - b);
-
+            // Minden év gomb megjelenítése a kezdőévtől 2026-ig
             const yearContainer = document.getElementById('yearFilterContainer');
             yearContainer.innerHTML = '';
 
-            years.forEach((year, index) => {
-                const isActive = (index === 0);
+            let firstYear = grandkid.startYear;
+            for (let y = firstYear; y <= 2026; y++) {
+                const isActive = (y === firstYear);
                 const btnClass = isActive ? "px-3 py-1.5 bg-amber-600 text-white rounded text-sm font-semibold year-btn" : "px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded text-sm year-btn";
-                yearContainer.innerHTML += `<button onclick="filterYear('${grandkidId}', '${year}', this)" class="${btnClass}" data-year="${year}">${year}</button>`;
-            });
-
-            if(years.length > 0) {
-                filterYear(grandkidId, years[0], yearContainer.querySelector('.year-btn'));
+                yearContainer.innerHTML += `<button onclick="filterYear('${grandkidId}', ${y}, this)" class="${btnClass}">${y}</button>`;
             }
+
+            filterYear(grandkidId, firstYear, yearContainer.querySelector('.year-btn'));
         }
 
         function filterYear(grandkidId, year, clickedBtn) {
-            currentGalleryGrandkid = grandkidId;
-            currentGalleryYear = year;
-
             document.querySelectorAll('#yearFilterContainer button').forEach(btn => {
                 btn.className = "px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded text-sm year-btn";
             });
@@ -244,10 +210,10 @@
 
             gPhotos.forEach(p => {
                 grid.innerHTML += `
-                    <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow-md flex flex-col justify-between p-4 photo-card-${p.year}">
+                    <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow-md flex flex-col justify-between p-4">
                         <div class="relative bg-slate-950 flex items-center justify-center rounded-lg overflow-hidden h-64">
-                            <!-- Ha egy fájl mégsem létezik a GitHubon, a script automatikusan eltünteti a kártyáját -->
-                            <img src="${p.url}" alt="Kép" class="w-full h-full object-contain bg-slate-950 transition-transform duration-300 hover:scale-150" onerror="this.closest('.bg-slate-800').remove()">
+                            <!-- Ha a kép nem létezik a GitHubon, a script automatikusan elrejti a kártyát -->
+                            <img src="${p.url}" alt="Kép" class="w-full h-full object-contain bg-slate-950 transition-transform duration-300 hover:scale-150" onerror="this.closest('.bg-slate-800').style.display='none'">
                             <span class="absolute top-2 right-2 bg-amber-600 text-white text-xs font-bold px-2 py-1 rounded z-10">${p.year}</span>
                         </div>
                         <div class="mt-3"><p class="text-slate-200 text-sm">${p.caption || ''}</p></div>
