@@ -39,6 +39,12 @@
                 <h2 class="text-3xl md:text-4xl font-extrabold text-amber-400 mb-4">Üdvözöljük a Családi Fotógalériában!</h2>
                 <p id="homeSubText" class="text-slate-300 text-lg mb-8">A galériák és a fotók megtekintéséhez bejelentkezés szükséges.</p>
                 <div id="homeGrandkidsGrid" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 hidden"></div>
+                
+                <div id="adminQuickAccess" class="hidden mt-6">
+                    <button onclick="showAdminView()" class="px-6 py-3 bg-blue-600 hover:bg-blue-500 font-bold rounded-xl shadow-lg transition text-lg">
+                        <i class="fa-solid fa-gears mr-2"></i> Felhasználók kezelése (Admin)
+                    </button>
+                </div>
             </div>
         </section>
 
@@ -49,6 +55,34 @@
                 <div id="yearFilterContainer" class="flex flex-wrap gap-2"></div>
             </div>
             <div id="galleryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </section>
+
+        <!-- 3. ADMIN FELÜLET (FELHASZNÁLÓK HOZZÁADÁSA) -->
+        <section id="adminView" class="hidden">
+            <div class="flex justify-between items-center mb-6 pb-4 border-b border-slate-700">
+                <h2 class="text-2xl font-bold text-blue-400"><i class="fa-solid fa-shield-halved mr-2"></i> Adminisztrációs Vezérlőpult</h2>
+                <button onclick="showHome()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded">Vissza a főoldalra</button>
+            </div>
+
+            <div class="max-w-xl mx-auto bg-slate-800 p-6 rounded-xl border border-slate-700">
+                <h3 class="text-xl font-bold text-amber-400 mb-4">Új felhasználó felvétele</h3>
+                <form id="userForm" onsubmit="handleUserSubmit(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Felhasználónév</label>
+                        <input type="text" id="newUsername" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Jelszó</label>
+                        <input type="password" id="newPassword" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" required>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 py-2 rounded font-bold transition">Felhasználó rögzítése</button>
+                </form>
+                
+                <div class="mt-6 pt-4 border-t border-slate-700">
+                    <h4 class="text-sm font-bold text-slate-300 mb-2">Eddigi regisztrált felhasználók:</h4>
+                    <ul id="userList" class="space-y-1 text-sm text-slate-400"></ul>
+                </div>
+            </div>
         </section>
     </main>
 
@@ -81,7 +115,7 @@
         let dbData = {
             grandkids: [
                 { id: "abris", name: "Abris", startYear: 2003, image: "https://raw.githubusercontent.com/unokak/unokak.github.io/main/Abris/2004-1.jpg" },
-                { id: "gerda", name: "Gerda", startYear: 2004, image: "https://raw.githubusercontent.com/unokak/unok.github.io/main/Gerda/2005-1.jpg" },
+                { id: "gerda", name: "Gerda", startYear: 2004, image: "https://raw.githubusercontent.com/unokak/unokak.github.io/main/Gerda/2005-1.jpg" },
                 { id: "moira", name: "Moira", startYear: 2007, image: "https://raw.githubusercontent.com/unokak/unokak.github.io/main/Moira/2007-1.jpg" }
             ],
             users: [
@@ -90,7 +124,7 @@
             photos: []
         };
 
-        // Betöltjük a mentett felhasználókat a böngészőből, ha léteznek
+        // Helyi felhasználók betöltése a localStorage-ből
         const savedUsers = localStorage.getItem('family_gallery_users');
         if (savedUsers) {
             try { dbData.users = JSON.parse(savedUsers); } catch(e) {}
@@ -126,6 +160,7 @@
         function hideAllViews() {
             document.getElementById('homeView').classList.add('hidden');
             document.getElementById('galleryView').classList.add('hidden');
+            document.getElementById('adminView').classList.add('hidden');
         }
 
         function showHome() {
@@ -147,6 +182,16 @@
             hideAllViews();
             document.getElementById('galleryView').classList.remove('hidden');
             renderGallery(grandkidId);
+        }
+
+        function showAdminView() {
+            if (!currentUser) {
+                openLoginModal();
+                return;
+            }
+            hideAllViews();
+            document.getElementById('adminView').classList.remove('hidden');
+            renderUserList();
         }
 
         function renderNav() {
@@ -178,9 +223,11 @@
         function renderHome() {
             const grid = document.getElementById('homeGrandkidsGrid');
             const subText = document.getElementById('homeSubText');
+            const adminQuickAccess = document.getElementById('adminQuickAccess');
             
             if (!currentUser) {
                 grid.classList.add('hidden');
+                adminQuickAccess.classList.add('hidden');
                 subText.innerText = "A galériák és a fotók megtekintéséhez bejelentkezés szükséges.";
                 return;
             }
@@ -188,6 +235,7 @@
             subText.innerText = "Válassz egy unokát a galéria megtekintéséhez:";
             grid.innerHTML = '';
             grid.classList.remove('hidden');
+            adminQuickAccess.classList.remove('hidden');
 
             dbData.grandkids.forEach(g => {
                 let displayName = g.name === 'Abris' ? 'Ábris' : g.name;
@@ -258,13 +306,40 @@
             });
         }
 
+        function handleUserSubmit(event) {
+            event.preventDefault();
+            const u = document.getElementById('newUsername').value.trim();
+            const p = document.getElementById('newPassword').value.trim();
+
+            if (dbData.users.some(user => user.username === u)) {
+                alert("Ez a felhasználónév már létezik!");
+                return;
+            }
+
+            dbData.users.push({ username: u, password: p, role: "admin" });
+            localStorage.setItem('family_gallery_users', JSON.stringify(dbData.users));
+            
+            document.getElementById('userForm').reset();
+            renderUserList();
+            showAlert(`Új felhasználó (${u}) sikeresen rögzítve!`, "bg-green-600 text-white");
+        }
+
+        function renderUserList() {
+            const list = document.getElementById('userList');
+            list.innerHTML = '';
+            dbData.users.forEach(user => {
+                list.innerHTML += `<li><i class="fa-solid fa-user mr-1 text-amber-400"></i> ${user.username}</li>`;
+            });
+        }
+
         function openLoginModal() { document.getElementById('loginModal').classList.remove('hidden'); }
         function closeLoginModal() { document.getElementById('loginModal').classList.add('hidden'); }
 
         function handleLogin(event) {
             event.preventDefault();
-            const u = document.getElementById('loginUser').value;
-            const p = document.getElementById('loginPass').value;
+            const u = document.getElementById('loginUser').value.trim();
+            const p = document.getElementById('loginPass').value.trim();
+            
             const foundUser = dbData.users.find(user => user.username === u && user.password === p);
             if (foundUser) {
                 currentUser = u;
