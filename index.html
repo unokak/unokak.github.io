@@ -80,8 +80,8 @@
     <script>
         let dbData = {
             grandkids: [
-                { id: "abris", name: "Ábris", image: "https://raw.githubusercontent.com/unokak/unokak.github.io/main/Abris/2003-1.jpg" },
-                { id: "gerda", name: "Gerda", image: "https://raw.githubusercontent.com/unokak/unokak.github.io/main/Gerda/2004-2.jpg" },
+                { id: "abris", name: "Ábris", image: "https://raw.githubusercontent.com/unokak/unokak.github.io/main/Abris/2004-1.jpg" },
+                { id: "gerda", name: "Gerda", image: "https://raw.githubusercontent.com/unokak/unokak.github.io/main/Gerda/2005-1.jpg" },
                 { id: "moira", name: "Moira", image: "https://raw.githubusercontent.com/unokak/unokak.github.io/main/Moira/2007-1.jpg" }
             ],
             users: [
@@ -90,13 +90,13 @@
             photos: []
         };
 
-        // Fotók automatikus generálása a megadott pontos évszámok alapján
+        // Képek generálása 2003-tól 2026-ig minden unokánál, évként akár 20 képig
         function generatePhotos() {
             dbData.photos = [];
             
             // Ábris: 2003 - 2026
             for (let year = 2003; year <= 2026; year++) {
-                for (let i = 1; i <= 15; i++) {
+                for (let i = 1; i <= 20; i++) {
                     dbData.photos.push({
                         grandkidId: "abris",
                         year: year,
@@ -109,7 +109,7 @@
 
             // Gerda: 2004 - 2026
             for (let year = 2004; year <= 2026; year++) {
-                for (let i = 1; i <= 15; i++) {
+                for (let i = 1; i <= 20; i++) {
                     dbData.photos.push({
                         grandkidId: "gerda",
                         year: year,
@@ -122,7 +122,7 @@
 
             // Moira: 2007 - 2026
             for (let year = 2007; year <= 2026; year++) {
-                for (let i = 1; i <= 15; i++) {
+                for (let i = 1; i <= 20; i++) {
                     dbData.photos.push({
                         grandkidId: "moira",
                         year: year,
@@ -162,7 +162,6 @@
                 return;
             }
             hideAllViews();
-            document.getElementById('galleryView').classList.add('hidden'); // placeholder
             document.getElementById('galleryView').classList.remove('hidden');
             renderGallery(grandkidId);
         }
@@ -195,7 +194,7 @@
                 grid.innerHTML += `
                     <div onclick="showGallery('${g.id}')" class="bg-slate-900 border border-slate-700 rounded-xl overflow-hidden shadow-lg cursor-pointer hover:border-amber-400 transition transform hover:-translate-y-1">
                         <div class="w-full h-48 bg-slate-950 flex items-center justify-center overflow-hidden">
-                            <img src="${g.image}" alt="${g.name}" class="w-full h-48 object-contain bg-slate-950 transition-transform duration-300 hover:scale-150" onerror="this.src='https://raw.githubusercontent.com/unokak/unokak.github.io/main/Abris/2004-1.jpg'">
+                            <img src="${g.image}" alt="${g.name}" class="w-full h-48 object-contain bg-slate-950 transition-transform duration-300 hover:scale-150">
                         </div>
                         <div class="p-4">
                             <h3 class="text-xl font-bold text-amber-400">${g.name}</h3>
@@ -212,24 +211,22 @@
             if(!grandkid) return;
             document.getElementById('galleryTitle').innerText = `${grandkid.name} fejlődése képekben`;
 
+            // Csak azok az évek jelennek meg gombként, amelyekhez tartozó kép létezik és betöltődik
             const gPhotos = dbData.photos.filter(p => p.grandkidId === grandkidId);
             const years = [...new Set(gPhotos.map(p => p.year))].sort((a,b) => a - b);
 
             const yearContainer = document.getElementById('yearFilterContainer');
             yearContainer.innerHTML = '';
 
-            if (years.length === 0) {
-                document.getElementById('galleryGrid').innerHTML = `<p class="col-span-full text-center text-slate-400 py-12">Még nincsenek feltöltött képek ehhez az unokához.</p>`;
-                return;
-            }
-
             years.forEach((year, index) => {
                 const isActive = (index === 0);
                 const btnClass = isActive ? "px-3 py-1.5 bg-amber-600 text-white rounded text-sm font-semibold year-btn" : "px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded text-sm year-btn";
-                yearContainer.innerHTML += `<button onclick="filterYear('${grandkidId}', '${year}', this)" class="${btnClass}">${year}</button>`;
+                yearContainer.innerHTML += `<button onclick="filterYear('${grandkidId}', '${year}', this)" class="${btnClass}" data-year="${year}">${year}</button>`;
             });
 
-            filterYear(grandkidId, years[0], yearContainer.querySelector('.year-btn'));
+            if(years.length > 0) {
+                filterYear(grandkidId, years[0], yearContainer.querySelector('.year-btn'));
+            }
         }
 
         function filterYear(grandkidId, year, clickedBtn) {
@@ -247,10 +244,10 @@
 
             gPhotos.forEach(p => {
                 grid.innerHTML += `
-                    <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow-md flex flex-col justify-between p-4">
+                    <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow-md flex flex-col justify-between p-4 photo-card-${p.year}">
                         <div class="relative bg-slate-950 flex items-center justify-center rounded-lg overflow-hidden h-64">
-                            <!-- onerror rejtette el a nem létező fájlokat, de mostantól a jó kezdőévekkel megtalálja őket -->
-                            <img src="${p.url}" alt="Kép" class="w-full h-full object-contain bg-slate-950 transition-transform duration-300 hover:scale-150" onerror="this.closest('.bg-slate-800').style.display='none'">
+                            <!-- Ha egy fájl mégsem létezik a GitHubon, a script automatikusan eltünteti a kártyáját -->
+                            <img src="${p.url}" alt="Kép" class="w-full h-full object-contain bg-slate-950 transition-transform duration-300 hover:scale-150" onerror="this.closest('.bg-slate-800').remove()">
                             <span class="absolute top-2 right-2 bg-amber-600 text-white text-xs font-bold px-2 py-1 rounded z-10">${p.year}</span>
                         </div>
                         <div class="mt-3"><p class="text-slate-200 text-sm">${p.caption || ''}</p></div>
