@@ -320,7 +320,7 @@
                             </div>
                             <div class="p-4">
                                 <h3 class="text-xl font-bold text-amber-400">${g.name}</h3>
-                                <p class="text-sm text-slate-400 mt-1">Kattints a fejlődési galériáért (Belépés szükséges)</p>
+                                <p class="text-sm text-slate-400 mt-1">Kattints a fejlődési galériáért</p>
                             </div>
                         </div>
                     `;
@@ -588,7 +588,7 @@
         }
 
         function closeLoginModal() {
-            document.getElementById('loginModal').classList.add('hidden');
+            document.getElementById('loginModal'].classList.add('hidden');
         }
 
         function handleLogin(event) {
@@ -601,6 +601,7 @@
                 currentUser = u;
                 closeLoginModal();
                 renderNav();
+                showHome(); // <-- EZ A JAVÍTÁS: Sikeres belépés után visszatér a főoldalra, frissítve a jogosultságot!
                 showAlert("Sikeres bejelentkezés!", "bg-green-600 text-white");
             } else {
                 alert("Hibás felhasználónév vagy jelszó!");
