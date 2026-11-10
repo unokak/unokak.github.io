@@ -42,7 +42,7 @@
                 
                 <div id="adminQuickAccess" class="hidden mt-6">
                     <button onclick="showAdminView()" class="px-6 py-3 bg-blue-600 hover:bg-blue-500 font-bold rounded-xl shadow-lg transition text-lg">
-                        <i class="fa-solid fa-gears mr-2"></i> Felhasználók kezelése (Admin)
+                        <i class="fa-solid fa-gears mr-2"></i> Regisztrált felhasználók listája (Admin)
                     </button>
                 </div>
             </div>
@@ -57,7 +57,7 @@
             <div id="galleryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
         </section>
 
-        <!-- 3. ADMIN FELÜLET (FELHASZNÁLÓK HOZZÁADÁSA) -->
+        <!-- 3. ADMIN FELÜLET -->
         <section id="adminView" class="hidden">
             <div class="flex justify-between items-center mb-6 pb-4 border-b border-slate-700">
                 <h2 class="text-2xl font-bold text-blue-400"><i class="fa-solid fa-shield-halved mr-2"></i> Adminisztrációs Vezérlőpult</h2>
@@ -65,26 +65,20 @@
             </div>
 
             <div class="max-w-xl mx-auto bg-slate-800 p-6 rounded-xl border border-slate-700">
-                <h3 class="text-xl font-bold text-amber-400 mb-4">Új felhasználó felvétele</h3>
-                <form id="userForm" onsubmit="handleUserSubmit(event)" class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Felhasználónév</label>
-                        <input type="text" id="newUsername" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" required>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Jelszó</label>
-                        <input type="password" id="newPassword" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" required>
-                    </div>
-                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 py-2 rounded font-bold transition">Felhasználó rögzítése</button>
-                </form>
-                
-                <div class="mt-6 pt-4 border-t border-slate-700">
-                    <h4 class="text-sm font-bold text-slate-300 mb-2">Eddigi regisztrált felhasználók:</h4>
-                    <ul id="userList" class="space-y-1 text-sm text-slate-400"></ul>
+                <h3 class="text-xl font-bold text-amber-400 mb-4">Rögzített családtagok / felhasználók</h3>
+                <div class="mt-4 pt-2">
+                    <ul id="userList" class="space-y-2 text-sm text-slate-300"></ul>
                 </div>
             </div>
         </section>
     </main>
+
+    <!-- KÉPNAGYÍTÓ (LIGHTBOX) MODAL -->
+    <div id="lightboxModal" class="fixed inset-0 bg-black/90 hidden flex flex-col items-center justify-center z-50 p-4" onclick="closeLightbox()">
+        <button class="absolute top-4 right-6 text-white text-3xl hover:text-amber-400 transition" onclick="closeLightbox()">&times;</button>
+        <img id="lightboxImg" class="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl mb-3" alt="Nagyított kép">
+        <p id="lightboxCaption" class="text-slate-300 text-base text-center"></p>
+    </div>
 
     <!-- BEJELENTKEZÉSI MODAL -->
     <div id="loginModal" class="fixed inset-0 bg-black/70 hidden flex items-center justify-center z-50 p-4">
@@ -114,41 +108,64 @@
     <script>
         let dbData = {
             grandkids: [
-                { id: "abris", name: "Abris", startYear: 2003, image: "https://raw.githubusercontent.com/unokak/unokak.github.io/main/Abris-elokep.png" },
-                { id: "gerda", name: "Gerda", startYear: 2004, image: "https://raw.githubusercontent.com/unokak/unokak.github.io/main/Gerda-elokep.png" },
-                { id: "moira", name: "Moira", startYear: 2007, image: "https://raw.githubusercontent.com/unokak/unokak.github.io/main/Moira-elokep.png" }
+                { id: "abris", name: "Abris", startYear: 2003, image: "https://raw.githubusercontent.com/unokak/unokak.github.io/main/Abris/2004-1.jpg" },
+                { id: "gerda", name: "Gerda", startYear: 2004, image: "https://raw.githubusercontent.com/unokak/unokak.github.io/main/Gerda/2005-1.jpg" },
+                { id: "moira", name: "Moira", startYear: 2007, image: "https://raw.githubusercontent.com/unokak/unokak.github.io/main/Moira/2007-1.jpg" }
             ],
             users: [
-                { username: "admin", password: "123", role: "admin" }
+                { username: "admin", password: "19511955", role: "admin" },
+                { username: "Timi", password: "Timi1976", role: "admin" },
+                { username: "Tomi", password: "Tomi1977", role: "admin" },
+                { username: "Nagymama", password: "Nagymama1955", role: "admin" },
+                { username: "Abris", password: "Abris2003", role: "admin" },
+                { username: "Gerda", password: "Gerda2004", role: "admin" },
+                { username: "Moira", password: "Moir2007", role: "admin" },
+                { username: "Liviusz", password: "Liviusz1969", role: "admin" }
             ],
             photos: []
         };
 
-        // Helyi felhasználók betöltése a localStorage-ből
-        const savedUsers = localStorage.getItem('family_gallery_users');
-        if (savedUsers) {
-            try { dbData.users = JSON.parse(savedUsers); } catch(e) {}
-        }
+        let customOrders = JSON.parse(localStorage.getItem('family_gallery_orders') || '{}');
 
         function generatePhotos() {
             dbData.photos = [];
             dbData.grandkids.forEach(g => {
                 for (let year = g.startYear; year <= 2026; year++) {
+                    let yearPhotos = [];
                     for (let i = 1; i <= 15; i++) {
-                        dbData.photos.push({
+                        yearPhotos.push({
                             grandkidId: g.id,
                             year: year,
                             url: `https://raw.githubusercontent.com/unokak/unokak.github.io/main/${g.name}/${year}-${i}.jpg`,
                             caption: `${g.name === 'Abris' ? 'Ábris' : g.name} ${year}. év (${i})`,
-                            order: i
+                            originalIndex: i
                         });
                     }
+
+                    let orderKey = `${g.id}_${year}`;
+                    if (customOrders[orderKey]) {
+                        let sorted = [];
+                        customOrders[orderKey].forEach(origIdx => {
+                            let found = yearPhotos.find(p => p.originalIndex === origIdx);
+                            if (found) sorted.push(found);
+                        });
+                        yearPhotos.forEach(p => {
+                            if (!sorted.includes(p)) sorted.push(p);
+                        });
+                        yearPhotos = sorted;
+                    }
+
+                    yearPhotos.forEach((p, idx) => {
+                        p.currentIndex = idx + 1;
+                        dbData.photos.push(p);
+                    });
                 }
             });
         }
 
         let currentUser = null;
         let currentGalleryGrandkid = null;
+        let currentGalleryYear = null;
 
         function initApp() {
             generatePhotos();
@@ -279,6 +296,9 @@
 
         function filterYear(grandkidId, year, clickedBtn) {
             if (!currentUser) return;
+            currentGalleryGrandkid = grandkidId;
+            currentGalleryYear = year;
+
             document.querySelectorAll('#yearFilterContainer button').forEach(btn => {
                 btn.className = "px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded text-sm year-btn";
             });
@@ -293,42 +313,72 @@
                 return;
             }
 
-            gPhotos.forEach(p => {
+            gPhotos.forEach((p, idx) => {
+                let moveButtons = '';
+                if (currentUser) {
+                    moveButtons = `
+                        <div class="flex items-center justify-between mt-3 pt-2 border-t border-slate-700 bg-slate-900 p-2 rounded">
+                            <span class="text-xs text-slate-400">Sorrend: ${idx + 1}</span>
+                            <div class="flex space-x-1">
+                                <button onclick="movePhoto('${grandkidId}', ${year}, ${idx}, -1)" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-xs text-amber-400" title="Előrébb"><i class="fa-solid fa-chevron-left"></i></button>
+                                <button onclick="movePhoto('${grandkidId}', ${year}, ${idx}, 1)" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-xs text-amber-400" title="Hátrább"><i class="fa-solid fa-chevron-right"></i></button>
+                            </div>
+                        </div>
+                    `;
+                }
+
                 grid.innerHTML += `
                     <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow-md flex flex-col justify-between p-4 photo-card">
-                        <div class="relative bg-slate-950 flex items-center justify-center rounded-lg overflow-hidden h-64">
-                            <img src="${p.url}" alt="Kép" class="w-full h-full object-contain bg-slate-950 transition-transform duration-300 hover:scale-110" onerror="this.closest('.photo-card').style.display='none'">
-                            <span class="absolute top-2 right-2 bg-amber-600 text-white text-xs font-bold px-2 py-1 rounded z-10">${p.year}</span>
+                        <div>
+                            <div class="relative bg-slate-950 flex items-center justify-center rounded-lg overflow-hidden h-64 cursor-pointer" onclick="openLightbox('${p.url}', '${p.caption}')">
+                                <img src="${p.url}" alt="Kép" class="w-full h-full object-contain bg-slate-950 transition-transform duration-300 hover:scale-110" onerror="this.closest('.photo-card').style.display='none'">
+                                <span class="absolute top-2 right-2 bg-amber-600 text-white text-xs font-bold px-2 py-1 rounded z-10">${p.year}</span>
+                                <div class="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded"><i class="fa-solid fa-magnifying-glass-plus mr-1"></i> Nagyítás</div>
+                            </div>
+                            <div class="mt-3"><p class="text-slate-200 text-sm">${p.caption || ''}</p></div>
                         </div>
-                        <div class="mt-3"><p class="text-slate-200 text-sm">${p.caption || ''}</p></div>
+                        ${moveButtons}
                     </div>
                 `;
             });
         }
 
-        function handleUserSubmit(event) {
-            event.preventDefault();
-            const u = document.getElementById('newUsername').value.trim();
-            const p = document.getElementById('newPassword').value.trim();
-
-            if (dbData.users.some(user => user.username === u)) {
-                alert("Ez a felhasználónév már létezik!");
-                return;
-            }
-
-            dbData.users.push({ username: u, password: p, role: "admin" });
-            localStorage.setItem('family_gallery_users', JSON.stringify(dbData.users));
+        function movePhoto(grandkidId, year, index, direction) {
+            let orderKey = `${grandkidId}_${year}`;
+            let gPhotos = dbData.photos.filter(p => p.grandkidId === grandkidId && p.year == year);
             
-            document.getElementById('userForm').reset();
-            renderUserList();
-            showAlert(`Új felhasználó (${u}) sikeresen rögzítve!`, "bg-green-600 text-white");
+            let originalIndices = gPhotos.map(p => p.originalIndex);
+            
+            let newIndex = index + direction;
+            if (newIndex < 0 || newIndex >= originalIndices.length) return;
+
+            let temp = originalIndices[index];
+            originalIndices[index] = originalIndices[newIndex];
+            originalIndices[newIndex] = temp;
+
+            customOrders[orderKey] = originalIndices;
+            localStorage.setItem('family_gallery_orders', JSON.stringify(customOrders));
+
+            generatePhotos();
+            filterYear(grandkidId, year, document.querySelector('.year-btn.bg-amber-600'));
+            showAlert("Sorrend frissítve!", "bg-green-600 text-white");
+        }
+
+        function openLightbox(url, caption) {
+            document.getElementById('lightboxImg').src = url;
+            document.getElementById('lightboxCaption').innerText = caption;
+            document.getElementById('lightboxModal').classList.remove('hidden');
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightboxModal').classList.add('hidden');
         }
 
         function renderUserList() {
             const list = document.getElementById('userList');
             list.innerHTML = '';
             dbData.users.forEach(user => {
-                list.innerHTML += `<li><i class="fa-solid fa-user mr-1 text-amber-400"></i> ${user.username}</li>`;
+                list.innerHTML += `<li class="flex items-center"><i class="fa-solid fa-user mr-2 text-amber-400"></i> ${user.username} <span class="text-xs text-slate-500 ml-2">(jelszó beállítva)</span></li>`;
             });
         }
 
